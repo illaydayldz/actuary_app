@@ -53,8 +53,8 @@ textarea.qa{width:100%;min-height:120px;border:none;outline:none;background:#F7F
 .btn.alt{background:#fff;color:#1D2033;border:1.4px solid #1D2033}
 .task{display:flex;gap:10px;align-items:center;padding:12px;background:#F7F4EF;border-radius:16px;margin-bottom:10px}
 .task.done span{text-decoration:line-through;color:var(--muted)}
-.progress-wrap{height:10px;background:#EEEAE6;border-radius:999px;overflow:hidden;margin-top:8px}
-.progress-bar{height:100%;background:#1D2033;border-radius:999px;width:0%}
+.progress-wrap{height:8px;background:#E8E4DE;border-radius:999px;overflow:hidden;margin-top:8px}
+.progress-bar{height:100%;background:linear-gradient(90deg,#B8A1FF,#7c5cfc);border-radius:999px;width:0%;transition:width .3s ease}
 .subject-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .list{display:grid;gap:10px}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
@@ -73,53 +73,148 @@ textarea.qa{width:100%;min-height:120px;border:none;outline:none;background:#F7F
 .chip{border-radius:22px;padding:18px;box-shadow:var(--shadow);background:#fff}
 .chip .num{font-size:28px;font-weight:800}
 @media (max-width:390px){.section h3{font-size:26px}.hero-card h2{font-size:30px}.grid-2,.kv,.stat-row{grid-template-columns:1fr}}
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0);pointer-events:none;transition:background .3s ease;z-index:100}
+.drawer-overlay.open{background:rgba(0,0,0,.35);pointer-events:all}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:260px;background:#fff;transform:translateX(-100%);transition:transform .3s ease;z-index:101;display:flex;flex-direction:column;padding:0;overflow:hidden;max-width:100vw}
+.drawer.open{transform:translateX(0)}
+.drawer-header{background:linear-gradient(135deg,#1D2033,#2D3561);padding:52px 20px 24px;position:relative;overflow:hidden}
+.drawer-header::before{content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;background:rgba(201,184,255,.15);border-radius:50%}
+.drawer-avatar{width:52px;height:52px;border-radius:16px;background:#F7F4EF;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px;overflow:hidden}
+.drawer-avatar img{width:100%;height:100%;object-fit:cover}
+.drawer-name{color:#fff;font-size:16px;font-weight:800}
+.drawer-sub{color:rgba(255,255,255,.5);font-size:12px;margin-top:2px}
+.drawer-body{flex:1;overflow-y:auto;padding:12px 0}
+.drawer-item{display:flex;align-items:center;gap:12px;padding:13px 20px;border:none;background:transparent;width:100%;text-align:left;cursor:pointer;font-size:14px;font-weight:700;color:#1D2033;transition:background .15s}
+.drawer-item:hover{background:#F7F4EF}
+.drawer-item.active{background:#F0EEFF;color:#7c5cfc}
+.drawer-ico{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.drawer-cat{font-size:10px;font-weight:800;color:#B8A1FF;letter-spacing:.08em;text-transform:uppercase;padding:14px 20px 6px}
+.drawer-divider{height:1px;background:#F0EEF0;margin:8px 20px}
 </style>
 </head>
 <body>
 <div class="app">
+  <!-- DRAWER OVERLAY -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+  <!-- DRAWER -->
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div class="drawer-avatar" id="drawerAvatar">👤</div>
+      <div class="drawer-name">İlayda</div>
+      <div class="drawer-sub">Aktüerya 1. Seviye</div>
+    </div>
+    <div class="drawer-body">
+      <!-- Genel -->
+      <div class="drawer-cat">Genel</div>
+      <button class="drawer-item active" id="d-dashboard" onclick="drawerGo('dashboard')"><div class="drawer-ico" style="background:#F0EEFF">⌂</div>Anasayfa</button>
+      <button class="drawer-item" id="d-profile" onclick="drawerGo('profile')"><div class="drawer-ico" style="background:#EDE8FF">👤</div>Profilim</button>
+      <button class="drawer-item" id="d-calendar" onclick="drawerGo('calendar')"><div class="drawer-ico" style="background:#E6F0FF">📅</div>Takvim</button>
+
+      <!-- Çalışma -->
+      <div class="drawer-divider"></div>
+      <div class="drawer-cat">Çalışma</div>
+      <button class="drawer-item" id="d-topics" onclick="drawerGo('topics')"><div class="drawer-ico" style="background:#E6F4EF">📚</div>Konular</button>
+      <button class="drawer-item" id="d-study" onclick="drawerGo('study')"><div class="drawer-ico" style="background:#EDE8FF">📋</div>Çalışma Planı</button>
+      <button class="drawer-item" id="d-questions" onclick="drawerGo('questions')"><div class="drawer-ico" style="background:#FDF0E8">✏️</div>Soru Takibi</button>
+
+      <!-- Araçlar -->
+      <div class="drawer-divider"></div>
+      <div class="drawer-cat">Araçlar</div>
+      <button class="drawer-item" id="d-ask" onclick="drawerGo('ask')"><div class="drawer-ico" style="background:#1D2033">🤖</div><span style="color:inherit">AI Koç</span></button>
+      <button class="drawer-item" id="d-pomodoro" onclick="drawerGo('pomodoro')"><div class="drawer-ico" style="background:#FFF0E8">⏱</div>Pomodoro</button>
+    </div>
+  </div>
+
   <div class="top">
-    <button class="icon-btn" data-screen="ask">☰</button>
-    <div class="user"><h1>Merhaba İlayda</h1><div class="small">Aktüerya AI Koç</div></div>
+    <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+    <div class="user"><h1>Merhaba İlayda</h1></div>
     <button class="icon-btn" data-screen="calendar">📅</button>
   </div>
 
   <section id="dashboard" class="screen active">
-    <div class="hero-card">
-      <div class="small">Sınava kalan</div>
-      <h2 id="daysLeft">Yükleniyor</h2>
-      <div class="sub">Canlı AI koç, konu takibi, takvim ve soru hedefleri</div>
+  <section id="dashboard" class="screen active">
+
+    <!-- Sınava kalan -->
+    <div style="background:linear-gradient(135deg,#1D2033 0%,#101737 100%);border-radius:28px;padding:22px 24px;box-shadow:var(--shadow);margin-bottom:14px;position:relative;overflow:hidden">
+      <div style="position:absolute;right:-30px;top:-30px;width:130px;height:130px;background:rgba(255,255,255,.06);border-radius:50%"></div>
+      <div style="position:absolute;left:-20px;bottom:-30px;width:90px;height:90px;background:rgba(255,255,255,.04);border-radius:50%"></div>
+      <div style="color:rgba(255,255,255,.6);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Sınava kalan</div>
+      <div id="daysLeft" style="color:#fff;font-size:52px;font-weight:800;line-height:1.05;margin:6px 0 2px">—</div>
+      <div style="color:rgba(255,255,255,.45);font-size:12px">18 Nisan 2026</div>
     </div>
 
     <div class="section"><h3>Bugün</h3></div>
+
     <div class="stat-row">
-      <div class="mini"><h4>GÜNLÜK HEDEF</h4><div class="big">3 konu</div><div class="small">1 tekrar + 40 soru</div></div>
-      <div class="mini"><h4>İLERLEME</h4><div class="big"><span id="homeDone">0</span>/<span id="homeTotal">58</span></div><div class="small">tamamlanan konu</div></div>
+      <div style="background:linear-gradient(135deg,#D5C8FF,#B8A1FF);border-radius:20px;padding:16px;box-shadow:var(--shadow)">
+        <div style="font-size:10px;font-weight:800;color:#3d2a8a;letter-spacing:.06em;text-transform:uppercase">GÜNLÜK HEDEF</div>
+        <div style="font-size:28px;font-weight:800;color:#1D2033;margin-top:4px">3 konu</div>
+        <div style="font-size:11px;color:#5a4a8a;margin-top:2px">1 tekrar + 40 soru</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#CDEEE4,#AEE1CF);border-radius:20px;padding:16px;box-shadow:var(--shadow)">
+        <div style="font-size:10px;font-weight:800;color:#0a3d2e;letter-spacing:.06em;text-transform:uppercase">İLERLEME</div>
+        <div style="font-size:28px;font-weight:800;color:#1D2033;margin-top:4px"><span id="homeDone">0</span>/<span id="homeTotal">58</span></div>
+        <div style="font-size:11px;color:#2a6a55;margin-top:2px">tamamlanan konu</div>
+      </div>
     </div>
 
-    <div class="section"><h3>Essentials</h3></div>
+    <div style="background:#fff;border-radius:22px;padding:16px;box-shadow:var(--shadow);margin-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:800;color:#9B8EC4;letter-spacing:.08em;text-transform:uppercase">TO-DO</div>
+        <button id="addTodoBtn" style="width:34px;height:34px;border-radius:12px;background:#1D2033;color:#fff;border:none;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer">+</button>
+      </div>
+      <div id="todoList" style="display:grid;gap:8px"></div>
+      <div id="addTodoForm" style="display:none;margin-top:10px">
+        <div style="display:flex;gap:8px">
+          <input id="todoInput" type="text" placeholder="Yapılacak ekle..." style="flex:1;padding:12px;border-radius:14px;border:1.5px solid #EDE8FF;font-size:14px;outline:none">
+          <button id="saveTodoBtn" style="padding:12px 16px;border-radius:14px;background:#1D2033;color:#fff;border:none;font-weight:800;cursor:pointer">Ekle</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section"><h3>Bölümler</h3></div>
     <div class="grid-2">
       <button class="tile dark" data-go="topics"><div class="arrow">›</div><div class="t">Konu<br>Listesi</div><div class="s">Tüm başlıklar ve ilerleme</div></button>
-      <button class="tile lav" data-go="study"><div class="arrow">›</div><div class="t">Study<br>Plan</div><div class="s">Hafta hafta program</div></button>
-      <button class="tile mint" data-go="questions"><div class="arrow">›</div><div class="t">Soru<br>Takibi</div><div class="s">Haftalık hedefler</div></button>
-      <button class="tile peach" data-go="pomodoro"><div class="arrow">›</div><div class="t">Pomodoro</div><div class="s">25 dk odak + mola</div></button>
+      <button class="tile" style="background:linear-gradient(160deg,#C4B8F0,#9B8EC4);color:#fff" data-go="study"><div class="arrow" style="background:rgba(255,255,255,.25)">›</div><div class="t">Çalışma<br>Planı</div><div class="s" style="color:rgba(255,255,255,.75)">Hafta hafta program</div></button>
+      <button class="tile" style="background:linear-gradient(160deg,#8FD5B8,#5AAA8A);color:#fff" data-go="questions"><div class="arrow" style="background:rgba(255,255,255,.25)">›</div><div class="t">Soru<br>Takibi</div><div class="s" style="color:rgba(255,255,255,.75)">Haftalık hedefler</div></button>
+      <button class="tile" style="background:linear-gradient(160deg,#FAC88A,#F0A855);color:#fff" data-go="pomodoro"><div class="arrow" style="background:rgba(255,255,255,.25)">›</div><div class="t">Pomodoro</div><div class="s" style="color:rgba(255,255,255,.75)">25 dk odak + mola</div></button>
     </div>
+  </section>
   </section>
 
   <section id="ask" class="screen">
-    <div class="section"><h3>AI Koç</h3></div>
-    <div class="card">
-      <div class="small">Buradan soru sorduğunda cevap uygulama içinde görünecek.</div>
-      <textarea class="qa" id="askBox" placeholder="Örn. Bayes teoremi nasıl çözülür?"></textarea>
-      <div class="controls">
-        <button class="btn" id="askLiveBtn">Sor</button>
-        <button class="btn alt" id="saveQuestion">Taslak kaydet</button>
+    <!-- Banner -->
+    <div style="background:linear-gradient(135deg,#1D2033 0%,#2D3561 100%);border-radius:28px;padding:22px 24px;box-shadow:var(--shadow);margin-bottom:16px;position:relative;overflow:hidden">
+      <div style="position:absolute;right:-20px;top:-20px;width:110px;height:110px;background:rgba(201,184,255,.12);border-radius:50%"></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:44px;height:44px;border-radius:16px;background:#F7F4EF;display:flex;align-items:center;justify-content:center;font-size:22px">🤖</div>
+        <div>
+          <div style="color:#fff;font-size:18px;font-weight:800">AI Koç</div>
+          <div style="color:rgba(255,255,255,.5);font-size:12px;margin-top:2px">Aktüerya soru asistanın</div>
+        </div>
       </div>
-      <div class="msg" id="savedQuestionArea">Hazır.</div>
+    </div>
+
+    <!-- Soru kartı -->
+    <div style="background:#fff;border-radius:24px;padding:18px;box-shadow:var(--shadow);margin-bottom:12px">
+      <div style="font-size:11px;font-weight:800;color:#B8A1FF;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">Sorun nedir?</div>
+      <textarea id="askBox" placeholder="Örn. Bayes teoremi nasıl çözülür?" style="width:100%;min-height:120px;border:1.5px solid #F0EEFF;outline:none;background:#F7F4EF;border-radius:18px;padding:14px;resize:none;font-size:14px;color:#1D2033;line-height:1.6"></textarea>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button id="askLiveBtn" style="flex:1;padding:14px;border:none;border-radius:16px;background:linear-gradient(135deg,#1D2033,#2D3561);color:#fff;font-weight:800;font-size:14px;cursor:pointer">✨ Sor</button>
+        <button id="saveQuestion" style="padding:14px 16px;border:1.5px solid #E0DCF8;border-radius:16px;background:#fff;color:#1D2033;font-weight:800;font-size:14px;cursor:pointer">💾</button>
+      </div>
+    </div>
+
+    <!-- Cevap kartı -->
+    <div style="background:#fff;border-radius:24px;padding:18px;box-shadow:var(--shadow)">
+      <div style="font-size:11px;font-weight:800;color:#B8A1FF;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">Cevap</div>
+      <div id="savedQuestionArea" style="font-size:14px;color:#1D2033;line-height:1.7;min-height:60px;white-space:pre-wrap;color:var(--muted)">Sorunuzu yazıp "Sor" butonuna basın.</div>
     </div>
   </section>
 
   <section id="study" class="screen">
-    <div class="section"><h3>Study Plan</h3></div>
+    <div class="section"><h3>Çalışma Planı</h3></div>
     <div class="card"><strong>13–19 Mart</strong><div class="small">Matematik: Limit, Süreklilik, Türev • Finansal Matematik: Basit/Bileşik faiz • Sigortacılık: Risk yönetimi</div></div>
     <div class="card"><strong>20–26 Mart</strong><div class="small">Matematik: İntegral, Matris, Determinant • Olasılık: Koşullu olasılık, Bayes • Ekonomi: Makro</div></div>
     <div class="card"><strong>27 Mart–2 Nisan</strong><div class="small">Matematik: Çok değişkenli • Olasılık: Dağılımlar • Finansal Matematik: Anüiteler</div></div>
@@ -128,44 +223,115 @@ textarea.qa{width:100%;min-height:120px;border:none;outline:none;background:#F7F
   </section>
 
   <section id="topics" class="screen">
-    <div class="section"><h3>Learning Hub</h3></div>
+    <div class="section"><h3>Konular</h3></div>
     <div class="search">⌕ <input id="searchInput" placeholder="Konu ara" /></div>
     <div id="subjectWrap"></div>
   </section>
 
   <section id="calendar" class="screen">
     <div class="section"><h3>Takvim</h3></div>
-    <div class="card">
-      <div class="small" style="margin-bottom:10px">Takvimde güne tıklayınca o güne ait notlar altta görünür.</div>
-      <div class="controls" style="margin-bottom:12px">
-        <button class="btn alt" id="prevMonth">‹</button>
-        <button class="btn alt" id="monthLabel">Mart 2026</button>
-        <button class="btn alt" id="nextMonth">›</button>
+
+    <!-- Ay navigasyonu -->
+    <div style="background:#fff;border-radius:24px;padding:16px;box-shadow:var(--shadow);margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <button id="prevMonth" style="width:38px;height:38px;border-radius:14px;border:1.5px solid #eee;background:#F7F4EF;font-size:18px;cursor:pointer">‹</button>
+        <div id="monthLabel" style="font-size:17px;font-weight:800"></div>
+        <button id="nextMonth" style="width:38px;height:38px;border-radius:14px;border:1.5px solid #eee;background:#F7F4EF;font-size:18px;cursor:pointer">›</button>
       </div>
-      <div class="calendar-grid" id="calendarGrid"></div>
-      <div class="card" style="box-shadow:none;background:#F7F4EF;margin-top:14px">
-        <strong>Etkinlik ekle</strong>
-        <div class="task" style="background:transparent;padding-left:0;padding-right:0;margin-top:10px">
-          <input id="eventDate" type="date" style="padding:10px;border-radius:12px;border:1px solid #ddd">
-          <input id="eventTitle" type="text" placeholder="Örn. Türev tekrar" style="flex:1;padding:10px;border-radius:12px;border:1px solid #ddd">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px" id="dowRow"></div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px" id="calendarGrid"></div>
+    </div>
+
+    <!-- Seçili gün -->
+    <div id="selectedDayCard" style="background:linear-gradient(135deg,#1D2033,#2D3561);border-radius:22px;padding:16px;box-shadow:var(--shadow);margin-bottom:12px;display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <div style="color:rgba(255,255,255,.6);font-size:11px;font-weight:700;letter-spacing:.05em">SEÇİLİ GÜN</div>
+          <div style="color:#fff;font-size:16px;font-weight:800;margin-top:2px" id="selectedDayTitle">—</div>
         </div>
-        <button class="btn" id="addEventBtn">Etkinlik ekle</button>
+        <div style="width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:18px">📅</div>
       </div>
-      <div class="card" style="box-shadow:none;background:#F7F4EF">
-        <strong>Seçili gün notları</strong>
-        <div class="msg" id="selectedDayNotes">Bir gün seç.</div>
+      <div id="selectedDayNotes" style="color:rgba(255,255,255,.7);font-size:13px">Not yok.</div>
+    </div>
+
+    <!-- Etkinlik ekle -->
+    <div style="background:#fff;border-radius:22px;padding:16px;box-shadow:var(--shadow);margin-bottom:12px">
+      <div style="font-size:14px;font-weight:800;margin-bottom:12px">➕ Etkinlik Ekle</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <input id="eventDate" type="date" style="padding:12px;border-radius:14px;border:1.5px solid #eee;font-size:14px;outline:none;background:#F7F4EF">
+        <input id="eventTitle" type="text" placeholder="Örn. Türev tekrar" style="padding:12px;border-radius:14px;border:1.5px solid #eee;font-size:14px;outline:none;background:#F7F4EF">
+        <button id="addEventBtn" style="padding:13px;border-radius:14px;background:#1D2033;color:#fff;border:none;font-weight:800;font-size:14px;cursor:pointer">Ekle</button>
       </div>
-      <div class="event-list" id="eventList"></div>
+    </div>
+
+    <!-- Tüm etkinlikler -->
+    <div style="background:#fff;border-radius:22px;padding:16px;box-shadow:var(--shadow)">
+      <div style="font-size:14px;font-weight:800;margin-bottom:12px">📋 Tüm Etkinlikler</div>
+      <div id="eventList"></div>
     </div>
   </section>
 
   <section id="questions" class="screen">
     <div class="section"><h3>Sorular</h3></div>
-    <div class="card">
-      <div class="task"><input type="number" min="0" id="q_math" style="width:72px;padding:10px;border-radius:12px;border:1px solid #ddd"> <span>Matematik çözülen soru</span></div>
-      <div class="task"><input type="number" min="0" id="q_prob" style="width:72px;padding:10px;border-radius:12px;border:1px solid #ddd"> <span>Olasılık çözülen soru</span></div>
-      <div class="task"><input type="number" min="0" id="q_stat" style="width:72px;padding:10px;border-radius:12px;border:1px solid #ddd"> <span>İstatistik çözülen soru</span></div>
-      <div class="task"><input type="number" min="0" id="q_fin" style="width:72px;padding:10px;border-radius:12px;border:1px solid #ddd"> <span>Finansal Matematik çözülen soru</span></div>
+    <div style="background:#fff;border-radius:24px;padding:18px;box-shadow:var(--shadow)">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Bugün çözdüğün soruları gir 👇</div>
+      <div style="display:grid;gap:12px">
+        <div style="background:linear-gradient(135deg,#E8E3FF,#D5C8FF);border-radius:20px;padding:16px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:18px">📐</div>
+            <div>
+              <div style="font-weight:800;font-size:14px">Matematik</div>
+              <div style="font-size:11px;color:#5a4a8a;margin-top:2px">Çözülen soru sayısı</div>
+            </div>
+          </div>
+          <input type="number" min="0" id="q_math" style="width:64px;padding:10px;border-radius:14px;border:none;background:rgba(255,255,255,.7);font-size:16px;font-weight:800;text-align:center;color:#1D2033">
+        </div>
+        <div style="background:linear-gradient(135deg,#E0F7F0,#CDEEE4);border-radius:20px;padding:16px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:18px">🎲</div>
+            <div>
+              <div style="font-weight:800;font-size:14px">Olasılık</div>
+              <div style="font-size:11px;color:#2a6a55;margin-top:2px">Çözülen soru sayısı</div>
+            </div>
+          </div>
+          <input type="number" min="0" id="q_prob" style="width:64px;padding:10px;border-radius:14px;border:none;background:rgba(255,255,255,.7);font-size:16px;font-weight:800;text-align:center;color:#1D2033">
+        </div>
+        <div style="background:linear-gradient(135deg,#FFF0E8,#F9DDCE);border-radius:20px;padding:16px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:18px">📊</div>
+            <div>
+              <div style="font-weight:800;font-size:14px">İstatistik</div>
+              <div style="font-size:11px;color:#7a4a20;margin-top:2px">Çözülen soru sayısı</div>
+            </div>
+          </div>
+          <input type="number" min="0" id="q_stat" style="width:64px;padding:10px;border-radius:14px;border:none;background:rgba(255,255,255,.7);font-size:16px;font-weight:800;text-align:center;color:#1D2033">
+        </div>
+        <div style="background:linear-gradient(135deg,#E8F4FF,#C8E4FF);border-radius:20px;padding:16px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:18px">💰</div>
+            <div>
+              <div style="font-weight:800;font-size:14px">Finansal Mat.</div>
+              <div style="font-size:11px;color:#1a4a7a;margin-top:2px">Çözülen soru sayısı</div>
+            </div>
+          </div>
+          <input type="number" min="0" id="q_fin" style="width:64px;padding:10px;border-radius:14px;border:none;background:rgba(255,255,255,.7);font-size:16px;font-weight:800;text-align:center;color:#1D2033">
+        </div>
+        <div style="background:linear-gradient(135deg,#FFE8F0,#FFD0E4);border-radius:20px;padding:16px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:18px">🛡️</div>
+            <div>
+              <div style="font-weight:800;font-size:14px">Sigortacılık</div>
+              <div style="font-size:11px;color:#7a1a4a;margin-top:2px">Çözülen soru sayısı</div>
+            </div>
+          </div>
+          <input type="number" min="0" id="q_ins" style="width:64px;padding:10px;border-radius:14px;border:none;background:rgba(255,255,255,.7);font-size:16px;font-weight:800;text-align:center;color:#1D2033">
+        </div>
+      </div>
+      <!-- Toplam -->
+      <div style="margin-top:16px;background:linear-gradient(135deg,#1D2033,#2D3561);border-radius:18px;padding:16px;display:flex;justify-content:space-between;align-items:center">
+        <div style="color:rgba(255,255,255,.7);font-size:13px;font-weight:700">TOPLAM ÇÖZÜLEN</div>
+        <div style="color:#fff;font-size:26px;font-weight:800" id="totalQ">0</div>
+      </div>
     </div>
   </section>
 
@@ -183,19 +349,80 @@ textarea.qa{width:100%;min-height:120px;border:none;outline:none;background:#F7F
 
   <section id="profile" class="screen">
     <div class="section"><h3>Profilim</h3></div>
-    <div class="card">
-      <div class="profile-top"><div class="avatar">👤</div><div><strong style="font-size:20px">İlayda</strong><div class="small">Aktüerya 1. Seviye hazırlık</div></div></div>
-      <div class="kv">
-        <div class="chip"><div class="small">Tamamlanan konu</div><div class="num" id="profileDone">0</div></div>
-        <div class="chip"><div class="small">Kalan konu</div><div class="num" id="profileLeft">0</div></div>
-        <div class="chip"><div class="small">Matematik sorusu</div><div class="num" id="profileMath">0</div></div>
-        <div class="chip"><div class="small">Finansal Mat.</div><div class="num" id="profileFin">0</div></div>
+    <!-- Profil Banner -->
+    <div style="background:linear-gradient(135deg,#1D2033 0%,#2D3561 100%);border-radius:28px;padding:24px;box-shadow:var(--shadow);margin-bottom:14px;position:relative;overflow:hidden">
+      <div style="position:absolute;right:-30px;top:-30px;width:120px;height:120px;background:rgba(201,184,255,.15);border-radius:50%"></div>
+      <div style="position:absolute;right:20px;bottom:-20px;width:80px;height:80px;background:rgba(185,234,217,.10);border-radius:50%"></div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="position:relative;cursor:pointer" onclick="document.getElementById('photoInput').click()">
+          <div id="avatarBox" style="width:64px;height:64px;border-radius:20px;background:#F7F4EF;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 8px 20px rgba(180,160,120,.3);overflow:hidden">
+            <img id="avatarImg" src="" style="width:100%;height:100%;object-fit:cover;display:none">
+            <span id="avatarEmoji">👤</span>
+          </div>
+          <div style="position:absolute;bottom:-4px;right:-4px;width:22px;height:22px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.15)">📷</div>
+        </div>
+        <input type="file" id="photoInput" accept="image/*" style="display:none">
+        <div>
+          <div style="color:#fff;font-size:20px;font-weight:800">İlayda</div>
+          <div style="color:rgba(255,255,255,.6);font-size:13px;margin-top:2px">Aktüerya 1. Seviye</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px">
+        <div style="background:rgba(255,255,255,.08);border-radius:16px;padding:14px">
+          <div style="color:rgba(255,255,255,.6);font-size:11px;font-weight:700;letter-spacing:.05em">TAMAMLANAN KONU</div>
+          <div style="color:#fff;font-size:28px;font-weight:800;margin-top:4px" id="profileDone">0</div>
+        </div>
+        <div style="background:rgba(255,255,255,.08);border-radius:16px;padding:14px">
+          <div style="color:rgba(255,255,255,.6);font-size:11px;font-weight:700;letter-spacing:.05em">KALAN KONU</div>
+          <div style="color:#fff;font-size:28px;font-weight:800;margin-top:4px" id="profileLeft">0</div>
+        </div>
+      </div>
+    </div>
+    <!-- To-Do Takibi -->
+    <div style="background:#fff;border-radius:24px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div>
+          <div style="font-size:11px;font-weight:800;color:#C9B8FF;letter-spacing:.08em">TO-DO</div>
+          <div style="font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Bugün</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:12px;color:var(--muted)"><span id="profileTodoDone">0</span>/<span id="profileTodoTotal">0</span> tamamlandı</span>
+        </div>
+      </div>
+      <div id="profileTodoList" style="display:grid;gap:8px">
+        <div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">Henüz görev yok.</div>
+      </div>
+    </div>
+    <!-- Araçlarım -->
+    <div style="background:#fff;border-radius:24px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px">
+      <div style="font-size:16px;font-weight:800;margin-bottom:14px">🛠 Araçlarım</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button data-go="study" style="border:none;border-radius:18px;padding:16px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);text-align:left;cursor:pointer">
+          <div style="font-size:22px;margin-bottom:6px">📅</div>
+          <div style="font-size:13px;font-weight:800;color:#1D2033">Çalışma Planı</div>
+          <div style="font-size:11px;color:#5a4a8a;margin-top:2px">Haftalık program</div>
+        </button>
+        <button data-go="questions" style="border:none;border-radius:18px;padding:16px;background:linear-gradient(135deg,#CDEEE4,#AEE1CF);text-align:left;cursor:pointer">
+          <div style="font-size:22px;margin-bottom:6px">✏️</div>
+          <div style="font-size:13px;font-weight:800;color:#1D2033">Soru Takibi</div>
+          <div style="font-size:11px;color:#2a6a55;margin-top:2px">Çözülen sorular</div>
+        </button>
+        <button data-go="pomodoro" style="border:none;border-radius:18px;padding:16px;background:linear-gradient(135deg,#F9DDCE,#F4C692);text-align:left;cursor:pointer">
+          <div style="font-size:22px;margin-bottom:6px">⏱</div>
+          <div style="font-size:13px;font-weight:800;color:#1D2033">Pomodoro</div>
+          <div style="font-size:11px;color:#7a4a20;margin-top:2px">Odak zamanlayıcı</div>
+        </button>
+        <button data-go="ask" style="border:none;border-radius:18px;padding:16px;background:linear-gradient(135deg,#1D2033,#2D3561);text-align:left;cursor:pointer">
+          <div style="font-size:22px;margin-bottom:6px">🤖</div>
+          <div style="font-size:13px;font-weight:800;color:#fff">AI Koç</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">Soru sor</div>
+        </button>
       </div>
     </div>
   </section>
 
   <nav class="bottom-nav">
-    <button class="nav-item active" data-screen="dashboard"><span class="ico">⌂</span>Home</button>
+    <button class="nav-item active" data-screen="dashboard"><span class="ico">⌂</span>Anasayfa</button>
     <button class="nav-item" data-screen="study"><span class="ico">▦</span>Plan</button>
     <button class="nav-item" data-screen="topics"><span class="ico">⌕</span>Konular</button>
     <button class="nav-item" data-screen="questions"><span class="ico">✎</span>Sorular</button>
@@ -214,6 +441,29 @@ const subjects = {
 const totalTopics = Object.values(subjects).reduce((a,b)=>a+b.length,0);
 document.getElementById('homeTotal').textContent = totalTopics;
 
+// DRAWER
+function toggleDrawer(){
+  const drawer = document.getElementById('drawer');
+  const overlay = document.getElementById('drawerOverlay');
+  const isOpen = drawer.classList.contains('open');
+  if(isOpen){ closeDrawer(); } else { drawer.classList.add('open'); overlay.classList.add('open'); }
+}
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+function drawerGo(id){
+  closeDrawer();
+  showScreen(id);
+  document.querySelectorAll('.drawer-item').forEach(b=>b.classList.remove('active'));
+  const el = document.getElementById('d-'+id);
+  if(el) el.classList.add('active');
+  // drawer avatar sync
+  const savedPhoto = localStorage.getItem('act_profile_photo');
+  const da = document.getElementById('drawerAvatar');
+  if(savedPhoto){ da.innerHTML=`<img src="${savedPhoto}" style="width:100%;height:100%;object-fit:cover">`; }
+}
+
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active', s.id===id));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.screen===id));
@@ -222,6 +472,13 @@ document.querySelectorAll('.nav-item').forEach(btn=>btn.onclick=()=>showScreen(b
 document.querySelectorAll('[data-go]').forEach(btn=>btn.onclick=()=>showScreen(btn.dataset.go));
 document.querySelectorAll('.icon-btn[data-screen]').forEach(btn=>btn.onclick=()=>showScreen(btn.dataset.screen));
 
+const subjectColors = {
+  "Matematik":            {bg:"linear-gradient(135deg,#1D2033,#2D3561)", light:"rgba(255,255,255,.12)", text:"#fff", sub:"rgba(255,255,255,.6)", ico:"📐"},
+  "Olasılık":             {bg:"linear-gradient(135deg,#D5C8FF,#B8A1FF)", light:"rgba(255,255,255,.4)",  text:"#2D1A6E", sub:"#5a4a8a", ico:"🎲"},
+  "İstatistik":           {bg:"linear-gradient(135deg,#CDEEE4,#AEE1CF)", light:"rgba(255,255,255,.4)",  text:"#0a3d2e", sub:"#2a6a55", ico:"📊"},
+  "Finansal Matematik":   {bg:"linear-gradient(135deg,#C8E4FF,#A0CCFF)", light:"rgba(255,255,255,.4)",  text:"#0a2d4d", sub:"#1a4a7a", ico:"💰"},
+  "Sigortacılık ve Ekonomi":{bg:"linear-gradient(135deg,#FFD0E4,#FFB3D1)", light:"rgba(255,255,255,.4)",text:"#4d0a2a", sub:"#7a1a4a", ico:"🛡️"}
+};
 const wrap = document.getElementById('subjectWrap');
 function renderSubjects(filter=''){
   wrap.innerHTML = '';
@@ -230,24 +487,43 @@ function renderSubjects(filter=''){
     if(filtered.length===0 && filter) return;
     const done = topics.filter((_,i)=>localStorage.getItem('act_topic_'+name+'_'+i)==='true').length;
     const pct = Math.round(done/topics.length*100);
+    const col = subjectColors[name] || {bg:'#fff',light:'#f7f4ef',text:'#1D2033',sub:'#7C7F8A',ico:'📚'};
     const card = document.createElement('div');
-    card.className = 'subject-card';
-    card.innerHTML = `<div class="subject-head"><div><strong>${name}</strong><div class="small">${done}/${topics.length} tamamlandı</div></div><div>${pct}%</div></div><div class="progress-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>`;
-    const list = document.createElement('div');
-    list.className = 'list';
-    list.style.marginTop='12px';
+    card.style.cssText = 'border-radius:22px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:14px';
+    card.innerHTML = `
+      <div style="background:${col.bg};padding:16px 18px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:12px;background:${col.light};display:flex;align-items:center;justify-content:center;font-size:18px">${col.ico}</div>
+            <div>
+              <div style="color:${col.text};font-size:15px;font-weight:800">${name}</div>
+              <div style="color:${col.sub};font-size:11px;margin-top:2px">${done}/${topics.length} tamamlandı</div>
+            </div>
+          </div>
+          <div style="color:${col.text};font-size:20px;font-weight:800;opacity:.85">${pct}%</div>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;margin-top:12px">
+          <div style="height:100%;width:${pct}%;background:rgba(255,255,255,.7);border-radius:99px;transition:width .3s"></div>
+        </div>
+      </div>
+      <div style="background:#fff;padding:12px 14px" id="list-${name.replace(/\s/g,'_')}"></div>
+    `;
+    wrap.appendChild(card);
+    const listEl = card.querySelector(`#list-${name.replace(/\s/g,'_')}`);
     filtered.forEach(topic=>{
       const idx = topics.indexOf(topic);
       const checked = localStorage.getItem('act_topic_'+name+'_'+idx)==='true';
       const row = document.createElement('label');
-      row.className = 'task'+(checked?' done':'');
-      row.innerHTML = `<input type="checkbox" ${checked?'checked':''} data-subject="${name}" data-index="${idx}"><span>${topic}</span>`;
-      list.appendChild(row);
+      row.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:12px;cursor:pointer;margin-bottom:4px;background:${checked?'#F0FDF8':'transparent'};transition:background .15s`;
+      row.innerHTML = `
+        <div style="width:22px;height:22px;border-radius:7px;border:2px solid ${checked?'#AEE1CF':'#ddd'};background:${checked?'#AEE1CF':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px">${checked?'✓':''}</div>
+        <span style="font-size:13px;font-weight:500;${checked?'text-decoration:line-through;color:var(--muted)':''}">${topic}</span>
+        <input type="checkbox" ${checked?'checked':''} data-subject="${name}" data-index="${idx}" style="display:none">
+      `;
+      listEl.appendChild(row);
     });
-    card.appendChild(list);
-    wrap.appendChild(card);
   });
-  document.querySelectorAll('.task input[type="checkbox"]').forEach(cb=>{
+  document.querySelectorAll('[data-subject]').forEach(cb=>{
     cb.onchange=()=>{
       localStorage.setItem('act_topic_'+cb.dataset.subject+'_'+cb.dataset.index, cb.checked);
       updateCounts();
@@ -268,10 +544,10 @@ function updateCounts(){
   document.getElementById('homeDone').textContent = done;
   document.getElementById('profileDone').textContent = done;
   document.getElementById('profileLeft').textContent = left;
-  document.getElementById('profileMath').textContent = localStorage.getItem('q_math') || 0;
-  document.getElementById('profileFin').textContent = localStorage.getItem('q_fin') || 0;
+  const total = ['q_math','q_prob','q_stat','q_fin','q_ins'].reduce((s,id)=>s+(parseInt(localStorage.getItem(id))||0),0);
+  const tq = document.getElementById('totalQ'); if(tq) tq.textContent = total;
 }
-['q_math','q_prob','q_stat','q_fin'].forEach(id=>{
+['q_math','q_prob','q_stat','q_fin','q_ins'].forEach(id=>{
   const el = document.getElementById(id);
   el.value = localStorage.getItem(id) || '';
   el.oninput = ()=>{ localStorage.setItem(id, el.value); updateCounts(); };
@@ -327,74 +603,239 @@ renderTimer();
 
 let currentYear = 2026, currentMonth = 2, selectedDate = '';
 const monthNames = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const dayNames = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
 function getEvents(){ return JSON.parse(localStorage.getItem('act_events') || '[]'); }
 function saveEvents(events){ localStorage.setItem('act_events', JSON.stringify(events)); }
-function showSelectedDayNotes(date){
+
+function showSelectedDay(date){
   selectedDate = date;
   const events = getEvents().filter(e=>e.date===date);
-  const box = document.getElementById('selectedDayNotes');
-  if(!events.length){ box.textContent = date ? `${date} için not yok.` : 'Bir gün seç.'; renderCalendar(); return; }
-  box.innerHTML = events.map(e=>`• ${e.title}`).join('<br>');
+  const card = document.getElementById('selectedDayCard');
+  const title = document.getElementById('selectedDayTitle');
+  const notes = document.getElementById('selectedDayNotes');
+  if(!date){ card.style.display='none'; renderCalendar(); return; }
+  card.style.display='block';
+  const d = new Date(date+'T12:00:00');
+  title.textContent = d.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+  if(!events.length){
+    notes.innerHTML = '<span style="color:rgba(255,255,255,.4);font-size:13px">Bu gün için etkinlik yok.</span>';
+  } else {
+    notes.innerHTML = events.map((e,i)=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.08);border-radius:12px;padding:10px 12px;margin-bottom:6px">
+        <span style="color:#fff;font-size:13px">• ${e.title}</span>
+        <button onclick="deleteEventByDate('${date}',${i})" style="border:none;background:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:13px">✕</button>
+      </div>`).join('');
+  }
   renderCalendar();
 }
-function renderEventList(){
-  const box = document.getElementById('eventList');
-  const events = getEvents().sort((a,b)=>a.date.localeCompare(b.date));
-  box.innerHTML = '';
-  if(!events.length){ box.innerHTML = '<div class="msg">Henüz etkinlik yok.</div>'; return; }
-  events.forEach((ev, idx)=>{
-    const row = document.createElement('div');
-    row.className = 'event';
-    row.innerHTML = `<div><strong>${ev.title}</strong><div class="small">${ev.date}</div></div><button class="btn alt" data-del="${idx}" style="padding:10px 12px">Sil</button>`;
-    box.appendChild(row);
+
+function deleteEventByDate(date, idx){
+  const events = getEvents().filter(e=>e.date===date);
+  const all = getEvents();
+  let count = 0;
+  const updated = all.filter(e=>{
+    if(e.date===date){ if(count===idx){count++;return false;} count++; }
+    return true;
   });
-  box.querySelectorAll('[data-del]').forEach(btn=>btn.onclick=()=>{
-    const events = getEvents();
-    const removed = events.splice(Number(btn.dataset.del),1)[0];
-    saveEvents(events);
-    renderCalendar();
-    renderEventList();
-    if(selectedDate===removed.date) showSelectedDayNotes(selectedDate);
-  });
+  saveEvents(updated);
+  showSelectedDay(date);
+  renderEventList();
 }
+
 function renderCalendar(){
   document.getElementById('monthLabel').textContent = monthNames[currentMonth] + ' ' + currentYear;
-  const grid = document.getElementById('calendarGrid'); grid.innerHTML='';
-  ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].forEach(d=>{ const el=document.createElement('div'); el.className='dow'; el.textContent=d; grid.appendChild(el); });
-  const first = new Date(currentYear, currentMonth, 1);
-  let startDay = first.getDay(); startDay = startDay===0 ? 6 : startDay-1;
-  const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
-  for(let i=0;i<startDay;i++) grid.appendChild(document.createElement('div'));
-  const today = new Date(); const events=getEvents();
-  for(let d=1; d<=daysInMonth; d++){
-    const iso = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const has = events.some(e=>e.date===iso);
-    const active = today.getFullYear()===currentYear && today.getMonth()===currentMonth && today.getDate()===d;
-    const selected = selectedDate===iso;
+  const dowRow = document.getElementById('dowRow');
+  dowRow.innerHTML = '';
+  dayNames.forEach(d=>{
     const el = document.createElement('div');
-    el.className = 'day' + (active?' active':'') + (has?' has':'') + (selected?' selected':'');
-    el.innerHTML = `${d}` + (has?'<span class="dot"></span>':'');
-    el.onclick = ()=> showSelectedDayNotes(iso);
+    el.style.cssText = 'text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:4px 0';
+    el.textContent = d;
+    dowRow.appendChild(el);
+  });
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+  const first = new Date(currentYear, currentMonth, 1);
+  let startDay = first.getDay(); startDay = startDay===0?6:startDay-1;
+  const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+  for(let i=0;i<startDay;i++){
+    const blank = document.createElement('div'); grid.appendChild(blank);
+  }
+  const today = new Date();
+  const events = getEvents();
+  for(let d=1;d<=daysInMonth;d++){
+    const iso = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = today.getFullYear()===currentYear && today.getMonth()===currentMonth && today.getDate()===d;
+    const isSelected = selectedDate===iso;
+    const hasEvent = events.some(e=>e.date===iso);
+    const el = document.createElement('div');
+    el.style.cssText = `
+      text-align:center;padding:8px 2px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:${isToday||isSelected?'800':'500'};
+      position:relative;transition:all .15s;
+      background:${isSelected?'#1D2033':isToday?'#E8E3FF':'transparent'};
+      color:${isSelected?'#fff':isToday?'#7c5cfc':'var(--ink)'};
+    `;
+    el.textContent = d;
+    if(hasEvent){
+      const dot = document.createElement('div');
+      dot.style.cssText = `width:5px;height:5px;border-radius:50%;background:${isSelected?'#B8A1FF':'#7c5cfc'};margin:2px auto 0;`;
+      el.appendChild(dot);
+    }
+    el.onclick = ()=> showSelectedDay(iso);
     grid.appendChild(el);
   }
 }
-document.getElementById('prevMonth').onclick=()=>{ currentMonth--; if(currentMonth<0){currentMonth=11; currentYear--;} renderCalendar(); };
-document.getElementById('nextMonth').onclick=()=>{ currentMonth++; if(currentMonth>11){currentMonth=0; currentYear++;} renderCalendar(); };
+
+function renderEventList(){
+  const box = document.getElementById('eventList');
+  const events = getEvents().sort((a,b)=>a.date.localeCompare(b.date));
+  if(!events.length){
+    box.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:8px">Henüz etkinlik yok.</div>';
+    return;
+  }
+  box.innerHTML = '';
+  events.forEach((ev,idx)=>{
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:12px;background:#F7F4EF;border-radius:14px;margin-bottom:8px';
+    row.innerHTML = `
+      <div>
+        <div style="font-weight:700;font-size:14px">${ev.title}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${ev.date}</div>
+      </div>
+      <button data-del="${idx}" style="padding:8px 12px;border:1.5px solid #eee;border-radius:12px;background:#fff;font-size:12px;cursor:pointer;color:var(--muted)">Sil</button>
+    `;
+    box.appendChild(row);
+  });
+  box.querySelectorAll('[data-del]').forEach(btn=>btn.onclick=()=>{
+    const evs = getEvents();
+    const removed = evs.splice(Number(btn.dataset.del),1)[0];
+    saveEvents(evs);
+    renderCalendar();
+    renderEventList();
+    if(selectedDate===removed.date) showSelectedDay(selectedDate);
+  });
+}
+
+document.getElementById('prevMonth').onclick=()=>{ currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} renderCalendar(); };
+document.getElementById('nextMonth').onclick=()=>{ currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} renderCalendar(); };
 document.getElementById('addEventBtn').onclick=()=>{
   const date = document.getElementById('eventDate').value;
   const title = document.getElementById('eventTitle').value.trim();
-  if(!date || !title) return;
-  const events=getEvents(); events.push({date,title}); saveEvents(events);
+  if(!date||!title) return;
+  const evs = getEvents(); evs.push({date,title}); saveEvents(evs);
   document.getElementById('eventTitle').value='';
-  renderCalendar();
-  renderEventList();
-  showSelectedDayNotes(date);
+  renderCalendar(); renderEventList();
+  showSelectedDay(date);
+};
+
+// TO-DO
+function getTodos(){ return JSON.parse(localStorage.getItem('act_todos') || '[]'); }
+function saveTodos(todos){ localStorage.setItem('act_todos', JSON.stringify(todos)); }
+
+function renderTodos(){
+  const todos = getTodos();
+  const list = document.getElementById('todoList');
+  const profileList = document.getElementById('profileTodoList');
+  const done = todos.filter(t=>t.done).length;
+
+  // Dashboard to-do list
+  list.innerHTML = '';
+  if(!todos.length){
+    list.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:8px">Görev yok. + ile ekle!</div>';
+  } else {
+    todos.forEach((todo, idx) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;background:' + (todo.done ? '#F0FDF8' : '#F7F4EF');
+      row.innerHTML = `
+        <div onclick="toggleTodo(${idx})" style="width:24px;height:24px;border-radius:8px;border:2px solid ${todo.done?'#AEE1CF':'#ddd'};background:${todo.done?'#AEE1CF':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">${todo.done?'✓':''}</div>
+        <span style="flex:1;font-size:14px;${todo.done?'text-decoration:line-through;color:var(--muted)':''}">${todo.text}</span>
+        <button onclick="deleteTodo(${idx})" style="border:none;background:none;color:#ccc;font-size:16px;cursor:pointer;padding:0">✕</button>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  // Profile to-do list
+  if(profileList){
+    document.getElementById('profileTodoDone').textContent = done;
+    document.getElementById('profileTodoTotal').textContent = todos.length;
+    profileList.innerHTML = '';
+    if(!todos.length){
+      profileList.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">Henüz görev yok.</div>';
+    } else {
+      todos.forEach((todo, idx) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;background:' + (todo.done ? '#F0FDF8' : '#F7F4EF');
+        row.innerHTML = `
+          <div style="width:24px;height:24px;border-radius:8px;border:2px solid ${todo.done?'#AEE1CF':'#ddd'};background:${todo.done?'#AEE1CF':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${todo.done?'✓':''}</div>
+          <span style="flex:1;font-size:14px;${todo.done?'text-decoration:line-through;color:var(--muted)':''}">  ${todo.text}</span>
+        `;
+        profileList.appendChild(row);
+      });
+    }
+  }
+}
+
+function toggleTodo(idx){
+  const todos = getTodos();
+  todos[idx].done = !todos[idx].done;
+  saveTodos(todos);
+  renderTodos();
+}
+function deleteTodo(idx){
+  const todos = getTodos();
+  todos.splice(idx,1);
+  saveTodos(todos);
+  renderTodos();
+}
+
+document.getElementById('addTodoBtn').onclick = () => {
+  const form = document.getElementById('addTodoForm');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  if(form.style.display === 'block') document.getElementById('todoInput').focus();
+};
+document.getElementById('saveTodoBtn').onclick = () => {
+  const input = document.getElementById('todoInput');
+  const text = input.value.trim();
+  if(!text) return;
+  const todos = getTodos();
+  todos.push({text, done: false});
+  saveTodos(todos);
+  input.value = '';
+  document.getElementById('addTodoForm').style.display = 'none';
+  renderTodos();
+};
+document.getElementById('todoInput').addEventListener('keydown', e => {
+  if(e.key === 'Enter') document.getElementById('saveTodoBtn').click();
+});
+
+// Profil fotoğrafı
+const savedPhoto = localStorage.getItem('act_profile_photo');
+if(savedPhoto){
+  document.getElementById('avatarImg').src = savedPhoto;
+  document.getElementById('avatarImg').style.display = 'block';
+  document.getElementById('avatarEmoji').style.display = 'none';
+  document.getElementById('drawerAvatar').innerHTML = `<img src="${savedPhoto}" style="width:100%;height:100%;object-fit:cover">`;
+}
+document.getElementById('photoInput').onchange = function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const data = ev.target.result;
+    localStorage.setItem('act_profile_photo', data);
+    document.getElementById('avatarImg').src = data;
+    document.getElementById('avatarImg').style.display = 'block';
+    document.getElementById('avatarEmoji').style.display = 'none';
+    document.getElementById('drawerAvatar').innerHTML = `<img src="${data}" style="width:100%;height:100%;object-fit:cover">`;
+  };
+  reader.readAsDataURL(file);
 };
 
 renderSubjects();
 updateCounts();
 renderCalendar();
 renderEventList();
+renderTodos();
 </script>
 </body>
 </html>
