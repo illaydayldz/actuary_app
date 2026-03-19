@@ -1,6 +1,6 @@
 {
   "name": "Froguary",
-  "short_name": "Aktüerya Koç",
+  "short_name": "Froguary",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ECE6DD",
