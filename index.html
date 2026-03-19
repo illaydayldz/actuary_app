@@ -2059,7 +2059,7 @@ showScreen = function(id){
   _origShowScreen(id);
   if(id==='profile'){ setTimeout(()=>{ renderStreakScore(); renderBadges(); }, 100); }
   if(id==='questions'){ setTimeout(renderProgressChart, 100); }
-  if(id==='social'){ generateCode(); renderWall(); renderLeaderboard(); const sa=document.getElementById('socialAvatar'); if(sa){ const n=localStorage.getItem('act_username')||'?'; sa.textContent=n[0].toUpperCase(); } }
+  if(id==='social'){ generateCode(); renderWall(); renderLeaderboard(); checkNotifications(); const sa=document.getElementById('socialAvatar'); if(sa){ const n=localStorage.getItem('act_username')||'?'; sa.textContent=n[0].toUpperCase(); } }
 };
 
 // ═══════════════════════════════════
@@ -2088,11 +2088,53 @@ function shareProgressPost(){
   document.getElementById('wallInput').value = done+' konu tamamladım 📚 | '+score+' XP ⭐ | '+streak+' günlük streak 🔥';
 }
 
-function likePost(i){
+async function likePost(i){
   const posts = getWallPosts();
+  const post = posts[i];
   posts[i].likes = (posts[i].likes||0)+1;
   localStorage.setItem('act_wall', JSON.stringify(posts));
   renderWall();
+  // Gönderi sahibine bildirim gönder (kendi gönderine değilse)
+  const myName = localStorage.getItem('act_username')||'Sen';
+  if(post.name && post.name !== myName && post.code){
+    try {
+      await fetch('/api/notify', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ toCode:post.code, fromName:myName, type:'like', postText:post.text })
+      });
+    } catch(e){}
+  }
+}
+
+async function checkNotifications(){
+  const myCode = localStorage.getItem('act_my_code');
+  if(!myCode) return;
+  try {
+    const res = await fetch('/api/notify?code='+myCode);
+    const data = await res.json();
+    if(!data.notifs || data.notifs.length===0) return;
+    // Native bildirim
+    if(Notification.permission==='granted'){
+      data.notifs.forEach(n=>{
+        new Notification('🐸 Froguary', {
+          body: n.type==='like' ? n.fromName+' gönderini beğendi ❤️' : n.fromName+' sana mesaj gönderdi',
+          icon: 'icons/icon-192.png'
+        });
+      });
+    }
+    // Nav'da kırmızı nokta
+    const btn = document.querySelector('[data-screen="social"]');
+    if(btn){
+      btn.style.position='relative';
+      let badge = btn.querySelector('.notif-dot');
+      if(!badge){ badge=document.createElement('div'); badge.className='notif-dot'; badge.style.cssText='position:absolute;top:6px;right:8px;width:8px;height:8px;border-radius:50%;background:#FF4444;border:2px solid #fff'; btn.appendChild(badge); }
+    }
+    // Sosyal açıksa toast
+    const active = document.querySelector('.screen.active');
+    if(active && active.id==='social'){
+      data.notifs.forEach(n=>showXPPopup(n.type==='like' ? n.fromName+' gönderini beğendi ❤️' : n.fromName+' bildirimi'));
+    }
+  } catch(e){}
 }
 
 function deletePost(i){
@@ -2241,6 +2283,10 @@ async function renderLeaderboard(){
 checkStreak();
 renderStreakScore();
 renderBadges();
+// Açılışta bildirim kontrolü (3sn bekle, kod oluşsun)
+setTimeout(()=>{ generateCode(); checkNotifications(); }, 3000);
+// Her 5 dakikada bir kontrol
+setInterval(checkNotifications, 5 * 60 * 1000);
 </script>
 </body>
 </html>
