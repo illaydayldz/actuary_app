@@ -176,6 +176,9 @@ textarea.qa{width:100%;min-height:120px;border:none;outline:none;background:#F7F
       <button class="drawer-item" id="d-ask" onclick="drawerGo('ask')"><div class="drawer-ico" style="background:#1D2033">🤖</div><span style="color:inherit">AI Koç</span></button>
       <button class="drawer-item" id="d-pomodoro" onclick="drawerGo('pomodoro')"><div class="drawer-ico" style="background:#FFF0E8">⏱</div>Pomodoro</button>
       <div class="drawer-divider"></div>
+      <div class="drawer-cat">Sosyal</div>
+      <button class="drawer-item" id="d-social" onclick="drawerGo('social')"><div class="drawer-ico" style="background:#F0EEFF">◎</div>Sosyal</button>
+      <div class="drawer-divider"></div>
       <div class="drawer-cat">Diğer</div>
       <button class="drawer-item" onclick="closeDrawer();openSettings()"><div class="drawer-ico" style="background:#F0EEFF">⚙️</div>Ayarları Düzenle</button>
       <button class="drawer-item" onclick="closeDrawer();exportData()"><div class="drawer-ico" style="background:#EEF8F4">📤</div>Verileri Yedekle</button>
@@ -434,6 +437,30 @@ textarea.qa{width:100%;min-height:120px;border:none;outline:none;background:#F7F
         <div style="color:#fff;font-size:26px;font-weight:800" id="totalQ">0</div>
       </div>
     </div>
+
+    <!-- İlerleme Grafiği -->
+    <div style="background:#fff;border-radius:24px;padding:18px;box-shadow:var(--shadow);margin-top:14px">
+      <div style="font-size:16px;font-weight:800;margin-bottom:4px">📈 İlerleme</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Son 7 günlük soru çözümü</div>
+      <canvas id="progressChart" height="140" style="width:100%"></canvas>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px">
+        <div style="background:#F7F4EF;border-radius:14px;padding:12px;text-align:center">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Bu Hafta</div>
+          <div style="font-size:22px;font-weight:800;margin-top:4px" id="weekTotal">0</div>
+          <div style="font-size:10px;color:var(--muted)">soru</div>
+        </div>
+        <div style="background:#F0EEFF;border-radius:14px;padding:12px;text-align:center">
+          <div style="font-size:10px;font-weight:700;color:#7B5EA7;text-transform:uppercase">Tamamlanan</div>
+          <div style="font-size:22px;font-weight:800;margin-top:4px;color:#7B5EA7" id="progressDoneCount">0</div>
+          <div style="font-size:10px;color:#9B7EC8">konu</div>
+        </div>
+        <div style="background:#EEF8F4;border-radius:14px;padding:12px;text-align:center">
+          <div style="font-size:10px;font-weight:700;color:#3A8A6A;text-transform:uppercase">Ortalama</div>
+          <div style="font-size:22px;font-weight:800;margin-top:4px;color:#3A8A6A" id="weekAvg">0</div>
+          <div style="font-size:10px;color:#5AAA8A">soru/gün</div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section id="pomodoro" class="screen">
@@ -584,54 +611,78 @@ textarea.qa{width:100%;min-height:120px;border:none;outline:none;background:#F7F
         <div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">Henüz görev yok.</div>
       </div>
     </div>
-    <!-- Araçlarım -->
-    <div style="background:#fff;border-radius:24px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px">
-      <div style="font-size:16px;font-weight:800;margin-bottom:14px">🛠 Araçlarım</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <button data-go="study" style="border:none;border-radius:18px;padding:16px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);text-align:left;cursor:pointer">
-          <div style="font-size:22px;margin-bottom:6px">📅</div>
-          <div style="font-size:13px;font-weight:800;color:#1D2033">Çalışma Planı</div>
-          <div style="font-size:11px;color:#5a4a8a;margin-top:2px">Haftalık program</div>
-        </button>
-        <button data-go="questions" style="border:none;border-radius:18px;padding:16px;background:linear-gradient(135deg,#CDEEE4,#AEE1CF);text-align:left;cursor:pointer">
-          <div style="font-size:22px;margin-bottom:6px">✏️</div>
-          <div style="font-size:13px;font-weight:800;color:#1D2033">Soru Takibi</div>
-          <div style="font-size:11px;color:#2a6a55;margin-top:2px">Çözülen sorular</div>
-        </button>
-        <button data-go="pomodoro" style="border:none;border-radius:18px;padding:16px;background:linear-gradient(135deg,#F9DDCE,#F4C692);text-align:left;cursor:pointer">
-          <div style="font-size:22px;margin-bottom:6px">⏱</div>
-          <div style="font-size:13px;font-weight:800;color:#1D2033">Pomodoro</div>
-          <div style="font-size:11px;color:#7a4a20;margin-top:2px">Odak zamanlayıcı</div>
-        </button>
-        <button data-go="ask" style="border:none;border-radius:18px;padding:16px;background:linear-gradient(135deg,#1D2033,#2D3561);text-align:left;cursor:pointer">
-          <div style="font-size:22px;margin-bottom:6px">🤖</div>
-          <div style="font-size:13px;font-weight:800;color:#fff">AI Koç</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">Soru sor</div>
-        </button>
+
+    <!-- Streak & Puan -->
+    <div style="background:linear-gradient(135deg,#1D2033 0%,#2D3561 100%);border-radius:24px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px;position:relative;overflow:hidden">
+      <div style="position:absolute;right:-20px;top:-20px;width:100px;height:100px;background:rgba(255,107,53,.15);border-radius:50%"></div>
+      <div style="position:absolute;left:-10px;bottom:-20px;width:80px;height:80px;background:rgba(201,184,255,.08);border-radius:50%"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="background:rgba(255,107,53,.2);border-radius:16px;padding:14px;text-align:center">
+          <div style="color:rgba(255,255,255,.6);font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">🔥 STREAK</div>
+          <div style="color:#FFB347;font-size:36px;font-weight:800;line-height:1" id="streakCount">0</div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;margin-top:4px" id="streakMsg">gün</div>
+        </div>
+        <div style="background:rgba(201,184,255,.15);border-radius:16px;padding:14px;text-align:center">
+          <div style="color:rgba(255,255,255,.6);font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">⭐ PUAN</div>
+          <div style="color:#C9B8FF;font-size:36px;font-weight:800;line-height:1" id="totalScore">0</div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;margin-top:4px">XP</div>
+        </div>
       </div>
     </div>
 
-    <!-- İlerleme Grafiği -->
+    <!-- Rozetler -->
     <div style="background:#fff;border-radius:24px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px">
-      <div style="font-size:16px;font-weight:800;margin-bottom:4px">📈 İlerleme</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Son 7 günlük soru çözümü</div>
-      <canvas id="progressChart" height="140" style="width:100%"></canvas>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px">
-        <div style="background:#F7F4EF;border-radius:14px;padding:12px;text-align:center">
-          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Bu Hafta</div>
-          <div style="font-size:22px;font-weight:800;margin-top:4px" id="weekTotal">0</div>
-          <div style="font-size:10px;color:var(--muted)">soru</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <div style="font-size:16px;font-weight:800">🏆 Rozetler</div>
+        <div id="badgeCountPill" style="background:#F0EEFF;color:#7B5EA7;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px">0/12</div>
+      </div>
+      <div id="badgesWrap" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px"></div>
+    </div>
+  </section>
+
+  <!-- SOSYAL -->
+  <section id="social" class="screen">
+    <div class="section"><h3>Sosyal</h3></div>
+    <div style="background:#fff;border-radius:20px;padding:6px;box-shadow:var(--shadow);margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <button onclick="switchSocialTab('wall')" id="socialTab-wall" style="padding:10px;border:none;border-radius:14px;background:#1D2033;color:#fff;font-size:13px;font-weight:800;cursor:pointer">📣 Paylaşım</button>
+      <button onclick="switchSocialTab('rank')" id="socialTab-rank" style="padding:10px;border:none;border-radius:14px;background:transparent;color:var(--muted);font-size:13px;font-weight:800;cursor:pointer">🏅 Sıralama</button>
+    </div>
+
+    <!-- Paylaşım Paneli -->
+    <div id="socialWallPanel">
+      <div style="background:#F7F4EF;border-radius:18px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div id="socialAvatar" style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0">?</div>
+          <textarea id="wallInput" maxlength="120" placeholder="Bugünkü çalışmanı paylaş... 🐸" style="flex:1;border:none;background:transparent;font-size:13px;outline:none;resize:none;min-height:52px;line-height:1.5;font-family:inherit"></textarea>
         </div>
-        <div style="background:#F0EEFF;border-radius:14px;padding:12px;text-align:center">
-          <div style="font-size:10px;font-weight:700;color:#7B5EA7;text-transform:uppercase">Tamamlanan</div>
-          <div style="font-size:22px;font-weight:800;margin-top:4px;color:#7B5EA7" id="progressDoneCount">0</div>
-          <div style="font-size:10px;color:#9B7EC8">konu</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <button onclick="shareProgressPost()" style="padding:8px 14px;border-radius:12px;background:#F0EEFF;color:#7B5EA7;border:none;font-size:12px;font-weight:800;cursor:pointer">📊 İlerleme Paylaş</button>
+          <button onclick="postToWall()" style="padding:8px 18px;border-radius:12px;background:#1D2033;color:#fff;border:none;font-weight:800;font-size:12px;cursor:pointer">Paylaş ✈️</button>
         </div>
-        <div style="background:#EEF8F4;border-radius:14px;padding:12px;text-align:center">
-          <div style="font-size:10px;font-weight:700;color:#3A8A6A;text-transform:uppercase">Ortalama</div>
-          <div style="font-size:22px;font-weight:800;margin-top:4px;color:#3A8A6A" id="weekAvg">0</div>
-          <div style="font-size:10px;color:#5AAA8A">soru/gün</div>
+      </div>
+      <div id="wallPosts" style="display:grid;gap:10px"></div>
+    </div>
+
+    <!-- Sıralama Paneli -->
+    <div id="socialRankPanel" style="display:none">
+      <div style="background:linear-gradient(135deg,#1D2033,#2D3561);border-radius:22px;padding:16px;box-shadow:var(--shadow);margin-bottom:12px">
+        <div style="color:rgba(255,255,255,.6);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">SENİN KODUN</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="color:#fff;font-size:22px;font-weight:800;letter-spacing:.1em" id="myProfileCode">—</div>
+          <button onclick="copyCode()" style="padding:8px 14px;border-radius:10px;background:rgba(255,255,255,.15);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">Kopyala</button>
         </div>
+        <div style="color:rgba(255,255,255,.4);font-size:11px;margin-top:6px">Bu kodu arkadaşlarınla paylaş</div>
+      </div>
+      <div style="background:#fff;border-radius:20px;padding:14px;box-shadow:var(--shadow);margin-bottom:12px">
+        <div style="font-size:13px;font-weight:800;margin-bottom:10px">👥 Arkadaş Ekle</div>
+        <div style="display:flex;gap:8px">
+          <input id="friendCodeInput" type="text" placeholder="Arkadaşın kodu (FROG-XXXX)" style="flex:1;padding:11px 14px;border-radius:14px;border:1.5px solid #EDE8FF;font-size:13px;outline:none;text-transform:uppercase;background:#F7F4EF">
+          <button onclick="addFriend()" style="padding:11px 16px;border-radius:14px;background:#1D2033;color:#fff;border:none;font-weight:800;cursor:pointer">Ekle</button>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:20px;padding:14px;box-shadow:var(--shadow)">
+        <div style="font-size:13px;font-weight:800;margin-bottom:12px">🏅 Puan Sıralaması</div>
+        <div id="leaderboardList"><div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Arkadaş ekleyince burada görünecek</div></div>
       </div>
     </div>
   </section>
@@ -639,7 +690,7 @@ textarea.qa{width:100%;min-height:120px;border:none;outline:none;background:#F7F
   <nav class="bottom-nav">
     <button class="nav-item active" data-screen="dashboard"><span class="ico">⌂</span>Anasayfa</button>
     <button class="nav-item" data-screen="study"><span class="ico">▦</span>Plan</button>
-    <button class="nav-item" data-screen="topics"><span class="ico">⌕</span>Konular</button>
+    <button class="nav-item" data-screen="social"><span class="ico">◎</span>Sosyal</button>
     <button class="nav-item" data-screen="questions"><span class="ico">✎</span>Sorular</button>
     <button class="nav-item" data-screen="profile"><span class="ico">☺</span>Profil</button>
   </nav>
@@ -1887,6 +1938,309 @@ renderEventList();
 renderTodos();
 renderStudyTabs();
 renderStudyContent();
+
+// ═══════════════════════════════════
+// STREAK, PUAN & ROZETLER
+// ═══════════════════════════════════
+const BADGES = [
+  {id:'streak5',   icon:'🔥', name:'5 Gün',     req: s=>s.streak>=5},
+  {id:'streak10',  icon:'💪', name:'10 Gün',    req: s=>s.streak>=10},
+  {id:'streak50',  icon:'⚡', name:'50 Gün',    req: s=>s.streak>=50},
+  {id:'streak100', icon:'👑', name:'100 Gün',   req: s=>s.streak>=100},
+  {id:'score100',  icon:'⭐', name:'100 XP',    req: s=>s.score>=100},
+  {id:'score500',  icon:'🌟', name:'500 XP',    req: s=>s.score>=500},
+  {id:'score1000', icon:'💎', name:'1000 XP',   req: s=>s.score>=1000},
+  {id:'topics10',  icon:'📚', name:'10 Konu',   req: s=>s.done>=10},
+  {id:'topics30',  icon:'🎓', name:'30 Konu',   req: s=>s.done>=30},
+  {id:'topics58',  icon:'🏆', name:'Tüm Konu',  req: s=>s.done>=58},
+  {id:'pom5',      icon:'⏱', name:'5 Seans',   req: s=>s.sessions>=5},
+  {id:'pom20',     icon:'🚀', name:'20 Seans',  req: s=>s.sessions>=20},
+];
+
+function getGameStats(){
+  return {
+    streak:   parseInt(localStorage.getItem('act_streak'))||0,
+    score:    parseInt(localStorage.getItem('act_score'))||0,
+    done:     doneCount(),
+    sessions: parseInt(localStorage.getItem('act_total_sessions'))||0,
+  };
+}
+
+function showXPPopup(msg){
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#1D2033;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:800;z-index:9999;transition:opacity .5s,transform .5s';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(-50%) translateY(-16px)'; }, 1500);
+  setTimeout(()=>el.remove(), 2100);
+}
+
+function addScore(points, reason){
+  const s = (parseInt(localStorage.getItem('act_score'))||0) + points;
+  localStorage.setItem('act_score', s);
+  showXPPopup('+'+points+' XP — '+reason);
+  checkBadges();
+  renderStreakScore();
+}
+
+function checkStreak(){
+  const today = new Date().toISOString().split('T')[0];
+  const last = localStorage.getItem('act_streak_last');
+  if(last===today) return;
+  const streak = parseInt(localStorage.getItem('act_streak'))||0;
+  const yest = new Date(); yest.setDate(yest.getDate()-1);
+  const yestStr = yest.toISOString().split('T')[0];
+  const newStreak = last===yestStr ? streak+1 : 1;
+  localStorage.setItem('act_streak', newStreak);
+  localStorage.setItem('act_streak_last', today);
+  if([5,10,50,100].includes(newStreak)) addScore(newStreak*10, newStreak+' günlük streak!');
+  renderStreakScore();
+}
+
+function checkBadges(){
+  const stats = getGameStats();
+  const earned = JSON.parse(localStorage.getItem('act_badges')||'[]');
+  let changed = false;
+  BADGES.forEach(b=>{
+    if(!earned.includes(b.id) && b.req(stats)){
+      earned.push(b.id); changed=true;
+      showXPPopup('🏆 Yeni rozet: '+b.name+'!');
+    }
+  });
+  if(changed) localStorage.setItem('act_badges', JSON.stringify(earned));
+  renderBadges();
+}
+
+function renderStreakScore(){
+  const s = getGameStats();
+  const sc = document.getElementById('streakCount');
+  const ts = document.getElementById('totalScore');
+  const sm = document.getElementById('streakMsg');
+  if(sc) sc.textContent = s.streak;
+  if(ts) ts.textContent = s.score;
+  if(sm) sm.textContent = s.streak===0 ? 'Başlamak için çalış!' : s.streak<5 ? (5-s.streak)+' gün kaldı 🔥' : s.streak+' gündür kesintisiz! 💪';
+}
+
+function renderBadges(){
+  const wrap = document.getElementById('badgesWrap');
+  if(!wrap) return;
+  const earned = JSON.parse(localStorage.getItem('act_badges')||'[]');
+  wrap.innerHTML = '';
+  BADGES.forEach(b=>{
+    const has = earned.includes(b.id);
+    const d = document.createElement('div');
+    d.style.cssText = 'text-align:center;padding:10px 6px;border-radius:14px;background:'+(has?'linear-gradient(135deg,#F0EEFF,#E8E3FF)':'#F7F4EF')+';border:1.5px solid '+(has?'#D5C8FF':'transparent');
+    d.title = b.name;
+    d.innerHTML = '<div style="font-size:22px;margin-bottom:4px;'+(has?'':'filter:grayscale(1);opacity:.3')+'">'+ b.icon +'</div><div style="font-size:9px;font-weight:800;color:'+(has?'#7B5EA7':'#bbb')+';line-height:1.2">'+ b.name +'</div>';
+    wrap.appendChild(d);
+  });
+  const pill = document.getElementById('badgeCountPill');
+  if(pill) pill.textContent = earned.length+'/'+BADGES.length;
+}
+
+// Konu tamamlayınca puan
+const _origUpdateCounts = updateCounts;
+updateCounts = function(){
+  const before = doneCount();
+  _origUpdateCounts();
+  const after = doneCount();
+  if(after > before) { addScore((after-before)*10, 'Konu tamamlandı!'); checkBadges(); }
+};
+
+// Pomodoro tamamlanınca puan (pomodoro interval'ine hook)
+const _origStartTimer = document.getElementById('startTimer').onclick;
+document.getElementById('startTimer').onclick = function(){
+  if(typeof _origStartTimer === 'function') _origStartTimer.call(this);
+};
+
+// Profile açılınca render
+const _origShowScreen = showScreen;
+showScreen = function(id){
+  _origShowScreen(id);
+  if(id==='profile'){ setTimeout(()=>{ renderStreakScore(); renderBadges(); }, 100); }
+  if(id==='questions'){ setTimeout(renderProgressChart, 100); }
+  if(id==='social'){ generateCode(); renderWall(); renderLeaderboard(); const sa=document.getElementById('socialAvatar'); if(sa){ const n=localStorage.getItem('act_username')||'?'; sa.textContent=n[0].toUpperCase(); } }
+};
+
+// ═══════════════════════════════════
+// SOSYAL: PAYLAŞIM DUVARI
+// ═══════════════════════════════════
+function getWallPosts(){ return JSON.parse(localStorage.getItem('act_wall')||'[]'); }
+
+function postToWall(){
+  const inp = document.getElementById('wallInput');
+  const text = inp.value.trim();
+  if(!text) return;
+  const name = localStorage.getItem('act_username')||'Sen';
+  const posts = getWallPosts();
+  posts.unshift({ text, name, score: parseInt(localStorage.getItem('act_score'))||0, streak: parseInt(localStorage.getItem('act_streak'))||0, date: new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}), likes:0 });
+  if(posts.length>30) posts.pop();
+  localStorage.setItem('act_wall', JSON.stringify(posts));
+  inp.value = '';
+  addScore(5, 'Paylaşım yaptın!');
+  renderWall();
+}
+
+function shareProgressPost(){
+  const done = doneCount();
+  const score = parseInt(localStorage.getItem('act_score'))||0;
+  const streak = parseInt(localStorage.getItem('act_streak'))||0;
+  document.getElementById('wallInput').value = done+' konu tamamladım 📚 | '+score+' XP ⭐ | '+streak+' günlük streak 🔥';
+}
+
+function likePost(i){
+  const posts = getWallPosts();
+  posts[i].likes = (posts[i].likes||0)+1;
+  localStorage.setItem('act_wall', JSON.stringify(posts));
+  renderWall();
+}
+
+function deletePost(i){
+  const posts = getWallPosts();
+  posts.splice(i,1);
+  localStorage.setItem('act_wall', JSON.stringify(posts));
+  renderWall();
+}
+
+function renderWall(){
+  const wrap = document.getElementById('wallPosts');
+  if(!wrap) return;
+  const posts = getWallPosts();
+  const myName = localStorage.getItem('act_username')||'Sen';
+  if(!posts.length){ wrap.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;background:#F7F4EF;border-radius:14px">Henüz paylaşım yok. İlk sen paylaş! 🐸</div>'; return; }
+  wrap.innerHTML = '';
+  posts.forEach((p,i)=>{
+    const isMe = p.name===myName;
+    const d = document.createElement('div');
+    d.style.cssText = 'background:#F7F4EF;border-radius:18px;padding:14px;border:1.5px solid '+(isMe?'#E0DCF8':'transparent');
+    d.innerHTML = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0">${p.name[0].toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:800">${p.name}${isMe?' <span style="font-size:10px;background:#F0EEFF;color:#7B5EA7;padding:2px 6px;border-radius:6px">sen</span>':''}</div>
+        <div style="font-size:10px;color:var(--muted)">${p.date} · ⭐${p.score||0} · 🔥${p.streak||0} gün</div>
+      </div>
+      ${isMe?`<button onclick="deletePost(${i})" style="border:none;background:none;color:#ddd;font-size:14px;cursor:pointer">✕</button>`:''}
+    </div>
+    <div style="font-size:13px;line-height:1.6;margin-bottom:10px">${p.text}</div>
+    <button onclick="likePost(${i})" style="border:none;background:#fff;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#7B5EA7">❤️ ${p.likes||0}</button>`;
+    wrap.appendChild(d);
+  });
+}
+
+function switchSocialTab(tab){
+  const wall = document.getElementById('socialWallPanel');
+  const rank = document.getElementById('socialRankPanel');
+  const wb = document.getElementById('socialTab-wall');
+  const rb = document.getElementById('socialTab-rank');
+  if(tab==='wall'){
+    wall.style.display='block'; rank.style.display='none';
+    wb.style.background='#1D2033'; wb.style.color='#fff';
+    rb.style.background='transparent'; rb.style.color='var(--muted)';
+    renderWall();
+  } else {
+    wall.style.display='none'; rank.style.display='block';
+    rb.style.background='#1D2033'; rb.style.color='#fff';
+    wb.style.background='transparent'; wb.style.color='var(--muted)';
+    renderLeaderboard();
+  }
+}
+
+// ═══════════════════════════════════
+// SOSYAL: SIRALAMA
+// ═══════════════════════════════════
+function generateCode(){
+  let code = localStorage.getItem('act_my_code');
+  if(!code){ code='FROG-'+Math.random().toString(36).substr(2,4).toUpperCase(); localStorage.setItem('act_my_code',code); }
+  const el = document.getElementById('myProfileCode');
+  if(el) el.textContent = code;
+  syncMyProfile();
+}
+
+async function syncMyProfile(){
+  const code = localStorage.getItem('act_my_code');
+  if(!code) return;
+  try {
+    await fetch('/api/friends', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        code,
+        name: localStorage.getItem('act_username')||'?',
+        score: parseInt(localStorage.getItem('act_score'))||0,
+        streak: parseInt(localStorage.getItem('act_streak'))||0,
+        done: doneCount()
+      })
+    });
+  } catch(e){ console.log('Sync failed',e); }
+}
+
+function copyCode(){
+  const code = localStorage.getItem('act_my_code')||'';
+  navigator.clipboard.writeText(code).then(()=>showXPPopup('Kod kopyalandı! 📋'));
+}
+
+async function addFriend(){
+  const inp = document.getElementById('friendCodeInput');
+  const code = inp.value.trim().toUpperCase();
+  if(!code||!code.startsWith('FROG-')){ showXPPopup('Geçersiz kod!'); return; }
+  if(code===localStorage.getItem('act_my_code')){ showXPPopup('Bu senin kendi kodun!'); return; }
+  const friends = JSON.parse(localStorage.getItem('act_friends')||'[]');
+  if(friends.find(f=>f.code===code)){ showXPPopup('Zaten ekli!'); return; }
+  try {
+    const res = await fetch('/api/friends?codes='+code);
+    const data = await res.json();
+    const profile = data.profiles&&data.profiles[0];
+    if(!profile){ showXPPopup('Kullanıcı bulunamadı!'); return; }
+    friends.push(profile);
+    localStorage.setItem('act_friends', JSON.stringify(friends));
+    inp.value = '';
+    showXPPopup('Arkadaş eklendi! 🎉');
+    renderLeaderboard();
+  } catch(e){ showXPPopup('Bağlantı hatası!'); }
+}
+
+async function renderLeaderboard(){
+  const list = document.getElementById('leaderboardList');
+  if(!list) return;
+  list.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">Yükleniyor...</div>';
+  const friends = JSON.parse(localStorage.getItem('act_friends')||'[]');
+  const me = { name: localStorage.getItem('act_username')||'Sen', score: parseInt(localStorage.getItem('act_score'))||0, streak: parseInt(localStorage.getItem('act_streak'))||0, done: doneCount(), isMe:true };
+  if(friends.length>0){
+    try {
+      const codes = friends.map(f=>f.code).join(',');
+      const res = await fetch('/api/friends?codes='+codes);
+      const data = await res.json();
+      if(data.profiles){
+        data.profiles.forEach(p=>{
+          const idx = friends.findIndex(f=>f.code===p.code);
+          if(idx>=0) friends[idx]={...friends[idx],...p};
+        });
+        localStorage.setItem('act_friends', JSON.stringify(friends));
+      }
+    } catch(e){ console.log('Refresh failed',e); }
+  }
+  const all = [me, ...friends].sort((a,b)=>b.score-a.score);
+  list.innerHTML = '';
+  if(all.length===1){
+    list.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Arkadaş ekleyince burada görünecek</div>';
+    return;
+  }
+  const medals = ['🥇','🥈','🥉'];
+  all.forEach((p,i)=>{
+    const d = document.createElement('div');
+    d.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:'+(p.isMe?'linear-gradient(135deg,#F0EEFF,#E8E3FF)':'#F7F4EF')+';margin-bottom:6px;border:1.5px solid '+(p.isMe?'#D5C8FF':'transparent');
+    d.innerHTML = '<div style="font-size:18px;width:24px;text-align:center">'+(medals[i]||'#'+(i+1))+'</div>'
+      +'<div style="width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">'+p.name[0].toUpperCase()+'</div>'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:800">'+p.name+(p.isMe?' (sen)':'')+'</div><div style="font-size:11px;color:var(--muted)">🔥'+p.streak+' gün · 📚'+p.done+' konu</div></div>'
+      +'<div style="text-align:right"><div style="font-size:15px;font-weight:800;color:#7B5EA7">'+p.score+'</div><div style="font-size:10px;color:var(--muted)">XP</div></div>';
+    list.appendChild(d);
+  });
+}
+
+// Başlatma
+checkStreak();
+renderStreakScore();
+renderBadges();
 </script>
 </body>
 </html>
