@@ -2205,12 +2205,16 @@ async function renderWall(){
   let posts = [];
   try {
     const res = await fetch('/api/friends?wall=1');
+    if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
     posts = data.posts || [];
-  } catch(e){ posts = getWallPosts(); }
+  } catch(e){
+    wrap.innerHTML = '<div style="color:#D85A30;font-size:12px;text-align:center;padding:12px">Hata: '+e.message+'</div>';
+    return;
+  }
   if(!posts.length){ wrap.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;background:#F7F4EF;border-radius:14px">Henüz paylaşım yok. İlk sen paylaş! 🐸</div>'; return; }
   wrap.innerHTML = '';
-  posts.forEach((p,i)=>{
+  posts.forEach((p)=>{
     const isMe = p.name===myName || p.code===myCode;
     const d = document.createElement('div');
     d.style.cssText = 'background:#F7F4EF;border-radius:18px;padding:14px;margin-bottom:8px;border:1.5px solid '+(isMe?'#E0DCF8':'transparent');
