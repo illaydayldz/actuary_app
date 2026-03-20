@@ -2122,7 +2122,7 @@ async function checkNotifications(){
       data.notifs.forEach(n=>{
         new Notification('🐸 Froguary', {
           body: n.type==='like' ? n.fromName+' gönderini beğendi ❤️' : n.fromName+' sana mesaj gönderdi',
-          icon: 'icons/icon-192.png'
+          icon: 'icon-192.png'
         });
       });
     }
