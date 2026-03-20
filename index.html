@@ -2337,6 +2337,33 @@ async function renderWall(){
     if(p.photo){ avatarHtml = '<img src="'+p.photo+'" style="width:36px;height:36px;border-radius:12px;object-fit:cover;flex-shrink:0">'; }
     else { avatarHtml = '<div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0">'+(p.name||'?')[0].toUpperCase()+'</div>'; }
 
+    // Yorumlar HTML
+    const comments = p.comments||[];
+    let commentsHtml = '';
+    if(comments.length){
+      commentsHtml += '<div style="border-top:1px solid #E8E3FF;margin-top:10px;padding-top:10px;display:grid;gap:6px">';
+      comments.forEach(c=>{
+        const isMeC = c.code===myCode;
+        const cAvatar = c.photo ? '<img src="'+c.photo+'" style="width:24px;height:24px;border-radius:8px;object-fit:cover;flex-shrink:0">'
+          : '<div style="width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0">'+(c.name||'?')[0].toUpperCase()+'</div>';
+        commentsHtml += '<div style="display:flex;gap:6px;align-items:flex-start">'
+          +cAvatar
+          +'<div style="flex:1;background:#fff;border-radius:10px;padding:6px 10px">'
+          +'<span style="font-size:11px;font-weight:800">'+c.name+'</span>'
+          +(isMeC?'<button onclick="deleteComment(\''+p.id+'\',\''+c.id+'\')" style="border:none;background:none;color:#ddd;font-size:11px;cursor:pointer;float:right">✕</button>':'')
+          +'<div style="font-size:12px;color:#1D2033;margin-top:2px">'+c.text+'</div>'
+          +'</div></div>';
+      });
+      commentsHtml += '</div>';
+    }
+    // Yorum input
+    commentsHtml += '<div style="display:flex;gap:6px;margin-top:8px;align-items:center">'
+      +(myPhoto?'<img src="'+myPhoto+'" style="width:26px;height:26px;border-radius:8px;object-fit:cover;flex-shrink:0">'
+        :'<div style="width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0">'+myName[0].toUpperCase()+'</div>')
+      +'<input type="text" id="commentInput-'+p.id+'" placeholder="Yorum yaz..." maxlength="100" style="flex:1;padding:7px 10px;border-radius:10px;border:1.5px solid #EDE8FF;font-size:12px;outline:none;background:#fff" onkeydown="if(event.key==='Enter')addComment(\''+p.id+'\' )">'
+      +'<button onclick="addComment(\''+p.id+'\')" style="padding:7px 10px;border-radius:10px;background:#1D2033;color:#fff;border:none;font-size:11px;font-weight:800;cursor:pointer">→</button>'
+      +'</div>';
+
     d.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
       +avatarHtml
       +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800">'+p.name+(isMe?' <span style="font-size:10px;background:#F0EEFF;color:#7B5EA7;padding:2px 6px;border-radius:6px">sen</span>':'')+'</div>'
@@ -2346,12 +2373,43 @@ async function renderWall(){
         +'<button onclick="deleteWallPost(\''+p.id+'\')" style="border:none;background:none;color:#ddd;font-size:14px;cursor:pointer">✕</button>'
         +'</div>':'')
       +'</div>'
-      +(p.text?'<div style="font-size:13px;line-height:1.6;margin-bottom:10px">'+p.text+'</div>':'')
-      +(p.imageUrl?'<img src="'+p.imageUrl+'" style="width:100%;border-radius:12px;margin-bottom:10px;max-height:240px;object-fit:cover">':'')
-      +'<button onclick="likePost(\''+p.id+'\')" style="border:none;background:#fff;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#7B5EA7">❤️ '+(p.likes||0)+'</button>';
+      +(p.text?'<div style="font-size:13px;line-height:1.6;margin-bottom:8px">'+p.text+'</div>':'')
+      +(p.imageUrl?'<img src="'+p.imageUrl+'" style="width:100%;border-radius:12px;margin-bottom:8px;max-height:240px;object-fit:cover">':'')
+      +'<button onclick="likePost(\''+p.id+'\')" style="border:none;background:#fff;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#7B5EA7">❤️ '+(p.likes||0)+'</button>'
+      +commentsHtml;
     wrap.appendChild(d);
   });
 }
+
+async function addComment(postId){
+  const inp = document.getElementById('commentInput-'+postId);
+  if(!inp) return;
+  const text = inp.value.trim();
+  if(!text) return;
+  const myCode = localStorage.getItem('act_my_code')||'';
+  const myName = localStorage.getItem('act_username')||'Sen';
+  const myPhoto = localStorage.getItem('act_profile_photo')||'';
+  inp.value = '';
+  try {
+    await fetch('/api/friends',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'comment', postId, commentText:text, commenterName:myName, commenterCode:myCode, commenterPhoto:myPhoto })
+    });
+    await renderWall();
+  } catch(e){ showXPPopup('Hata!'); }
+}
+
+async function deleteComment(postId, commentId){
+  const myCode = localStorage.getItem('act_my_code')||'';
+  try {
+    await fetch('/api/friends',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'deleteComment', postId, commentId, code:myCode })
+    });
+    await renderWall();
+  } catch(e){}
+}
+
 
 function editWallPost(postId, encodedText){
   const text = decodeURIComponent(encodedText);
