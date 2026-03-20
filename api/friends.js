@@ -23,7 +23,8 @@ export default async function handler(req, res) {
     // Profil kaydet
     if (!action || action === 'save') {
       if (!code) return res.status(400).json({ error: 'code gerekli' });
-      const profile = JSON.stringify({ code, name, score, streak, done, updatedAt: Date.now() });
+      const photo = req.body.photo || '';
+      const profile = JSON.stringify({ code, name, score, streak, done, photo, updatedAt: Date.now() });
       await redis('SET', `user:${code}`, profile, 'EX', 86400 * 30);
       return res.status(200).json({ ok: true });
     }
