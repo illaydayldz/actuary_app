@@ -57,6 +57,19 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    // Gönderi sil
+    if (action === 'deletePost') {
+      const raw = await redis('LRANGE', 'wall:global', 0, 49);
+      const posts = (raw || []).map(p => { try { return JSON.parse(p); } catch { return null; } }).filter(Boolean);
+      const filtered = posts.filter(p => p.id !== postId || p.code !== code);
+      await redis('DEL', 'wall:global');
+      if(filtered.length) {
+        for(const p of filtered.reverse()) await redis('RPUSH', 'wall:global', JSON.stringify(p));
+        await redis('EXPIRE', 'wall:global', 86400 * 30);
+      }
+      return res.status(200).json({ ok: true });
+    }
+
     // Gönderi beğen
     if (action === 'like') {
       const raw = await redis('LRANGE', 'wall:global', 0, 49);
