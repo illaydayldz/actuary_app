@@ -2241,17 +2241,10 @@ async function syncMyProfile(){
   if(!code) return;
   try {
     await fetch('/api/friends', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        code,
-        name: localStorage.getItem('act_username')||'?',
-        score: parseInt(localStorage.getItem('act_score'))||0,
-        streak: parseInt(localStorage.getItem('act_streak'))||0,
-        done: doneCount()
-      })
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'save', code, name: localStorage.getItem('act_username')||'?', score: parseInt(localStorage.getItem('act_score'))||0, streak: parseInt(localStorage.getItem('act_streak'))||0, done: doneCount() })
     });
-  } catch(e){ console.log('Sync failed',e); }
+  } catch(e){}
 }
 
 function copyCode(){
@@ -2267,38 +2260,95 @@ async function addFriend(){
   const friends = JSON.parse(localStorage.getItem('act_friends')||'[]');
   if(friends.find(f=>f.code===code)){ showXPPopup('Zaten ekli!'); return; }
   try {
+    // Kullanıcı var mı kontrol et
     const res = await fetch('/api/friends?codes='+code);
     const data = await res.json();
     const profile = data.profiles&&data.profiles[0];
-    if(!profile){ showXPPopup('Kullanıcı bulunamadı!'); return; }
-    friends.push(profile);
-    localStorage.setItem('act_friends', JSON.stringify(friends));
+    if(!profile){ showXPPopup('Kullanıcı bulunamadı! Önce arkadaşın uygulamayı açsın.'); return; }
+    // Arkadaşlık isteği gönder
+    const myCode = localStorage.getItem('act_my_code');
+    const myName = localStorage.getItem('act_username')||'?';
+    await fetch('/api/friends', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'request', toCode:code, fromCode:myCode, fromName:myName })
+    });
     inp.value = '';
-    showXPPopup('Arkadaş eklendi! 🎉');
+    showXPPopup('Arkadaşlık isteği gönderildi! 🐸');
+  } catch(e){ showXPPopup('Hata: '+e.message); }
+}
+
+async function checkFriendRequests(){
+  const myCode = localStorage.getItem('act_my_code');
+  if(!myCode) return;
+  try {
+    const res = await fetch('/api/friends?requests='+myCode);
+    const data = await res.json();
+    if(!data.requests||!data.requests.length) return;
+    data.requests.forEach(r => showFriendRequestUI(r));
+  } catch(e){}
+}
+
+function showFriendRequestUI(req){
+  const existing = document.getElementById('friendReqBanner');
+  if(existing) existing.remove();
+  const banner = document.createElement('div');
+  banner.id = 'friendReqBanner';
+  banner.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#fff;border-radius:20px;padding:14px 18px;box-shadow:0 8px 32px rgba(29,32,51,.2);z-index:9999;width:300px;border:1.5px solid #D5C8FF';
+  banner.innerHTML = `
+    <div style="font-size:13px;font-weight:800;margin-bottom:4px">👥 Arkadaşlık İsteği</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px"><b>${req.fromName}</b> sana arkadaşlık isteği gönderdi!</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="acceptFriend('${req.fromCode}','${req.fromName}')" style="flex:1;padding:10px;border-radius:12px;background:#1D2033;color:#fff;border:none;font-weight:800;font-size:12px;cursor:pointer">✅ Kabul Et</button>
+      <button onclick="rejectFriend('${req.fromCode}')" style="flex:1;padding:10px;border-radius:12px;background:#F7F4EF;color:var(--muted);border:none;font-weight:700;font-size:12px;cursor:pointer">❌ Reddet</button>
+    </div>
+  `;
+  document.body.appendChild(banner);
+}
+
+async function acceptFriend(fromCode, fromName){
+  const myCode = localStorage.getItem('act_my_code');
+  try {
+    await fetch('/api/friends', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'accept', myCode, friendCode:fromCode })
+    });
+    // Lokal listeye de ekle
+    const friends = JSON.parse(localStorage.getItem('act_friends')||'[]');
+    if(!friends.find(f=>f.code===fromCode)){
+      friends.push({ code:fromCode, name:fromName, score:0, streak:0, done:0 });
+      localStorage.setItem('act_friends', JSON.stringify(friends));
+    }
+    document.getElementById('friendReqBanner')?.remove();
+    showXPPopup(fromName+' arkadaş olarak eklendi! 🎉');
     renderLeaderboard();
-  } catch(e){ showXPPopup('Bağlantı hatası!'); }
+  } catch(e){ showXPPopup('Hata!'); }
+}
+
+function rejectFriend(fromCode){
+  document.getElementById('friendReqBanner')?.remove();
+  showXPPopup('İstek reddedildi.');
 }
 
 async function renderLeaderboard(){
   const list = document.getElementById('leaderboardList');
   if(!list) return;
   list.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">Yükleniyor...</div>';
-  const friends = JSON.parse(localStorage.getItem('act_friends')||'[]');
+  const myCode = localStorage.getItem('act_my_code');
   const me = { name: localStorage.getItem('act_username')||'Sen', score: parseInt(localStorage.getItem('act_score'))||0, streak: parseInt(localStorage.getItem('act_streak'))||0, done: doneCount(), isMe:true };
-  if(friends.length>0){
+
+  // Sunucudan arkadaş listesini çek
+  let friends = JSON.parse(localStorage.getItem('act_friends')||'[]');
+  if(myCode){
     try {
-      const codes = friends.map(f=>f.code).join(',');
-      const res = await fetch('/api/friends?codes='+codes);
+      const res = await fetch('/api/friends?friendlist='+myCode);
       const data = await res.json();
-      if(data.profiles){
-        data.profiles.forEach(p=>{
-          const idx = friends.findIndex(f=>f.code===p.code);
-          if(idx>=0) friends[idx]={...friends[idx],...p};
-        });
+      if(data.profiles && data.profiles.length){
+        friends = data.profiles;
         localStorage.setItem('act_friends', JSON.stringify(friends));
       }
-    } catch(e){ console.log('Refresh failed',e); }
+    } catch(e){}
   }
+
   const all = [me, ...friends].sort((a,b)=>b.score-a.score);
   list.innerHTML = '';
   if(all.length===1){
@@ -2322,9 +2372,8 @@ checkStreak();
 renderStreakScore();
 renderBadges();
 // Açılışta bildirim kontrolü (3sn bekle, kod oluşsun)
-setTimeout(()=>{ generateCode(); checkNotifications(); }, 3000);
-// Her 5 dakikada bir kontrol
-setInterval(checkNotifications, 5 * 60 * 1000);
+setTimeout(()=>{ generateCode(); checkNotifications(); checkFriendRequests(); }, 3000);
+setInterval(()=>{ checkNotifications(); checkFriendRequests(); }, 5 * 60 * 1000);
 </script>
 </body>
 </html>
