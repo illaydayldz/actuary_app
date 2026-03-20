@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Froguary" />
-<link rel="apple-touch-icon" href="icon-192.png" />
-<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="icon" href="icons/icon-192.png" />
 <link rel="manifest" href="manifest.json" />
 <style>
 :root{--bg:#ECE6DD;--card:#FFFFFF;--ink:#1D2033;--muted:#7C7F8A;--lav:#C9B8FF;--mint:#B9EAD9;--peach:#F7D1B8;--shadow:0 14px 38px rgba(29,32,51,.10);--navH:88px}
@@ -2122,7 +2122,7 @@ async function checkNotifications(){
       data.notifs.forEach(n=>{
         new Notification('🐸 Froguary', {
           body: n.type==='like' ? n.fromName+' gönderini beğendi ❤️' : n.fromName+' sana mesaj gönderdi',
-          icon: 'icon-192.png'
+          icon: 'icons/icon-192.png'
         });
       });
     }
