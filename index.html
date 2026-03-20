@@ -1971,6 +1971,31 @@ if(savedName){
 }
 
 // Profil fotoğrafı
+const CLOUDINARY_CLOUD = 'dyhwboh6n';
+const CLOUDINARY_PRESET = 'sm5ows6r';
+
+async function uploadToCloudinary(file){
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+    method: 'POST',
+    body: formData
+  });
+  const data = await res.json();
+  return data.secure_url;
+}
+
+function setProfilePhoto(url){
+  localStorage.setItem('act_profile_photo', url);
+  document.getElementById('avatarImg').src = url;
+  document.getElementById('avatarImg').style.display = 'block';
+  document.getElementById('avatarEmoji').style.display = 'none';
+  document.getElementById('drawerAvatar').innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover">`;
+  // Upstash'e de kaydet
+  syncMyProfile();
+}
+
 const savedPhoto = localStorage.getItem('act_profile_photo');
 if(savedPhoto){
   document.getElementById('avatarImg').src = savedPhoto;
@@ -1978,19 +2003,18 @@ if(savedPhoto){
   document.getElementById('avatarEmoji').style.display = 'none';
   document.getElementById('drawerAvatar').innerHTML = `<img src="${savedPhoto}" style="width:100%;height:100%;object-fit:cover">`;
 }
-document.getElementById('photoInput').onchange = function(e){
+
+document.getElementById('photoInput').onchange = async function(e){
   const file = e.target.files[0];
   if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev){
-    const data = ev.target.result;
-    localStorage.setItem('act_profile_photo', data);
-    document.getElementById('avatarImg').src = data;
-    document.getElementById('avatarImg').style.display = 'block';
-    document.getElementById('avatarEmoji').style.display = 'none';
-    document.getElementById('drawerAvatar').innerHTML = `<img src="${data}" style="width:100%;height:100%;object-fit:cover">`;
-  };
-  reader.readAsDataURL(file);
+  showXPPopup('Fotoğraf yükleniyor...');
+  try {
+    const url = await uploadToCloudinary(file);
+    setProfilePhoto(url);
+    showXPPopup('Fotoğraf güncellendi! 📸');
+  } catch(err) {
+    showXPPopup('Yükleme hatası!');
+  }
 };
 
 renderSubjects();
@@ -2250,7 +2274,7 @@ async function renderWall(){
     const d = document.createElement('div');
     d.style.cssText = 'background:#F7F4EF;border-radius:18px;padding:14px;margin-bottom:8px;border:1.5px solid '+(isMe?'#E0DCF8':'transparent');
     d.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
-      +'<div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0">'+(p.name||'?')[0].toUpperCase()+'</div>'
+      +avatarHTML(p, 36, 12)
       +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800">'+p.name+(isMe?' <span style="font-size:10px;background:#F0EEFF;color:#7B5EA7;padding:2px 6px;border-radius:6px">sen</span>':'')+'</div>'
       +'<div style="font-size:10px;color:var(--muted)">'+(p.date||'')+' · ⭐'+(p.score||0)+' · 🔥'+(p.streak||0)+' gün</div></div>'
       +(isMe?'<button onclick="deleteWallPost(\''+p.id+'\')" style="border:none;background:none;color:#ddd;font-size:14px;cursor:pointer;flex-shrink:0">✕</button>':'')
@@ -2307,7 +2331,7 @@ async function syncMyProfile(){
   try {
     await fetch('/api/friends', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'save', code, name: localStorage.getItem('act_username')||'?', score: parseInt(localStorage.getItem('act_score'))||0, streak: parseInt(localStorage.getItem('act_streak'))||0, done: doneCount() })
+      body: JSON.stringify({ action:'save', code, name: localStorage.getItem('act_username')||'?', score: parseInt(localStorage.getItem('act_score'))||0, streak: parseInt(localStorage.getItem('act_streak'))||0, done: doneCount(), photo: localStorage.getItem('act_profile_photo')||'' })
     });
   } catch(e){}
 }
@@ -2394,6 +2418,15 @@ function rejectFriend(fromCode){
   showXPPopup('İstek reddedildi.');
 }
 
+
+function avatarHTML(p, size=36, radius=12){
+  const s = size+'px';
+  const r = radius+'px';
+  if(p.photo) return '<img src="'+p.photo+'" style="width:'+s+';height:'+s+';border-radius:'+r+';object-fit:cover;flex-shrink:0">';
+  return '<div style="width:'+s+';height:'+s+';border-radius:'+r+';background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:'+(size*0.4)+'px;font-weight:800;color:#fff;flex-shrink:0">'+(p.name||'?')[0].toUpperCase()+'</div>';
+}
+
+
 async function renderLeaderboard(){
   const list = document.getElementById('leaderboardList');
   if(!list) return;
@@ -2425,7 +2458,7 @@ async function renderLeaderboard(){
     d.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:'+(p.isMe?'linear-gradient(135deg,#F0EEFF,#E8E3FF)':'#F7F4EF')+';margin-bottom:6px;border:1.5px solid '+(p.isMe?'#D5C8FF':'transparent')+(p.isMe?'':';cursor:pointer');
     if(!p.isMe) d.onclick = ()=>showFriendProfile(p);
     d.innerHTML = '<div style="font-size:18px;width:24px;text-align:center">'+(medals[i]||'#'+(i+1))+'</div>'
-      +'<div style="width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">'+p.name[0].toUpperCase()+'</div>'
+      +avatarHTML(p, 34, 11)
       +'<div style="flex:1"><div style="font-size:13px;font-weight:800">'+p.name+(p.isMe?' (sen)':'')+'</div><div style="font-size:11px;color:var(--muted)">🔥'+p.streak+' gün · 📚'+p.done+' konu</div></div>'
       +'<div style="text-align:right"><div style="font-size:15px;font-weight:800;color:#7B5EA7">'+p.score+'</div><div style="font-size:10px;color:var(--muted)">XP</div></div>';
     list.appendChild(d);
@@ -2442,7 +2475,7 @@ function showFriendProfile(p){
     <div style="background:#fff;border-radius:28px 28px 0 0;padding:24px;width:100%;max-width:430px;max-height:80vh;overflow-y:auto">
       <div style="width:40px;height:4px;background:#E0DCF8;border-radius:99px;margin:0 auto 20px"></div>
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
-        <div style="width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff">${p.name[0].toUpperCase()}</div>
+        ${p.photo ? '<img src="'+p.photo+'" style="width:60px;height:60px;border-radius:18px;object-fit:cover">' : '<div style="width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff">'+p.name[0].toUpperCase()+'</div>'}
         <div>
           <div style="font-size:20px;font-weight:800">${p.name}</div>
           <div style="font-size:12px;color:var(--muted)">🔑 ${p.code||'—'}</div>
