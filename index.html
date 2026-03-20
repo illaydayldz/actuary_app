@@ -2104,7 +2104,7 @@ showScreen = function(id){
   _origShowScreen(id);
   if(id==='profile'){ setTimeout(()=>{ renderStreakScore(); renderBadges(); }, 100); }
   if(id==='questions'){ setTimeout(renderProgressChart, 100); }
-  if(id==='social'){ generateCode(); renderWall(); renderLeaderboard(); checkNotifications(); const sa=document.getElementById('socialAvatar'); if(sa){ const n=localStorage.getItem('act_username')||'?'; sa.textContent=n[0].toUpperCase(); } }
+  if(id==='social'){ generateCode(); setTimeout(()=>{ renderWall(); renderLeaderboard(); }, 100); checkNotifications(); const sa=document.getElementById('socialAvatar'); if(sa){ const n=localStorage.getItem('act_username')||'?'; sa.textContent=n[0].toUpperCase(); } }
 };
 
 // ═══════════════════════════════════
