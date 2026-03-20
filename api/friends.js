@@ -51,7 +51,8 @@ export default async function handler(req, res) {
 
     // Gönderi paylaş
     if (action === 'post') {
-      const post = JSON.stringify({ id: Date.now()+'', code, name, score, streak, text, likes: 0, date: new Date().toLocaleDateString('tr-TR', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) });
+      const { imageUrl, photo } = req.body;
+      const post = JSON.stringify({ id: Date.now()+'', code, name, score, streak, text, imageUrl: imageUrl||'', photo: photo||'', likes: 0, date: new Date().toLocaleDateString('tr-TR', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) });
       await redis('LPUSH', 'wall:global', post);
       await redis('LTRIM', 'wall:global', 0, 49);
       await redis('EXPIRE', 'wall:global', 86400 * 30);
