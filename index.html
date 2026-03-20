@@ -2360,7 +2360,7 @@ async function renderWall(){
     commentsHtml += '<div style="display:flex;gap:6px;margin-top:8px;align-items:center">'
       +(myPhoto?'<img src="'+myPhoto+'" style="width:26px;height:26px;border-radius:8px;object-fit:cover;flex-shrink:0">'
         :'<div style="width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0">'+myName[0].toUpperCase()+'</div>')
-      +'<input type="text" id="commentInput-'+p.id+'" placeholder="Yorum yaz..." maxlength="100" style="flex:1;padding:7px 10px;border-radius:10px;border:1.5px solid #EDE8FF;font-size:12px;outline:none;background:#fff" onkeydown="if(event.key==='Enter')addComment(\''+p.id+'\' )">'
+      +'<input type="text" id="commentInput-'+p.id+'" data-pid="'+p.id+'" placeholder="Yorum yaz..." maxlength="100" style="flex:1;padding:7px 10px;border-radius:10px;border:1.5px solid #EDE8FF;font-size:12px;outline:none;background:#fff" onkeydown="if(event.key===&apos;Enter&apos;)addComment(this.dataset.pid)">'
       +'<button onclick="addComment(\''+p.id+'\')" style="padding:7px 10px;border-radius:10px;background:#1D2033;color:#fff;border:none;font-size:11px;font-weight:800;cursor:pointer">→</button>'
       +'</div>';
 
@@ -2381,7 +2381,8 @@ async function renderWall(){
   });
 }
 
-async function addComment(postId){
+async function addComment(postIdOrEl){
+  const postId = typeof postIdOrEl === 'string' ? postIdOrEl : postIdOrEl;
   const inp = document.getElementById('commentInput-'+postId);
   if(!inp) return;
   const text = inp.value.trim();
