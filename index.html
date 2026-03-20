@@ -205,8 +205,21 @@ textarea.qa{width:100%;min-height:120px;border:none;outline:none;background:#F7F
   <div class="top">
     <button class="icon-btn" onclick="toggleDrawer()">☰</button>
     <div class="user"><h1 id="greetingName">Merhaba İlayda</h1></div>
-    <button class="icon-btn" data-screen="calendar">📅</button>
+    <button class="icon-btn" onclick="toggleNotifPanel()" style="position:relative">
+      🔔
+      <div id="notifDot" style="display:none;position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:#FF4444;border:2px solid #fff"></div>
+    </button>
   </div>
+
+  <!-- BİLDİRİM PANELİ -->
+  <div id="notifPanel" style="display:none;position:fixed;top:80px;right:16px;width:300px;max-width:calc(100vw - 32px);background:#fff;border-radius:20px;box-shadow:0 8px 32px rgba(29,32,51,.2);z-index:200;max-height:400px;overflow-y:auto">
+    <div style="padding:14px 16px;border-bottom:1px solid #F0EEF8;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:14px;font-weight:800">🔔 Bildirimler</div>
+      <button onclick="clearNotifs()" style="border:none;background:none;font-size:11px;color:var(--muted);cursor:pointer">Temizle</button>
+    </div>
+    <div id="notifList" style="padding:8px"></div>
+  </div>
+  <div id="notifPanelOverlay" onclick="toggleNotifPanel()" style="display:none;position:fixed;inset:0;z-index:199"></div>
 
   <section id="dashboard" class="screen active">
   <section id="dashboard" class="screen active">
@@ -2400,8 +2413,120 @@ async function renderLeaderboard(){
   });
 }
 
-// Başlatma
-checkStreak();
+// ═══════════════════════════════════
+// IN-APP BİLDİRİM MERKEZİ
+// ═══════════════════════════════════
+function getLocalNotifs(){ return JSON.parse(localStorage.getItem('act_local_notifs')||'[]'); }
+function saveLocalNotifs(n){ localStorage.setItem('act_local_notifs', JSON.stringify(n)); }
+
+function addLocalNotif(icon, text, action){
+  const notifs = getLocalNotifs();
+  notifs.unshift({ icon, text, action, time: Date.now(), read: false });
+  if(notifs.length > 30) notifs.pop();
+  saveLocalNotifs(notifs);
+  renderNotifBadge();
+  renderNotifList();
+}
+
+function renderNotifBadge(){
+  const notifs = getLocalNotifs();
+  const unread = notifs.filter(n=>!n.read).length;
+  const dot = document.getElementById('notifDot');
+  if(dot) dot.style.display = unread > 0 ? 'block' : 'none';
+}
+
+function renderNotifList(){
+  const list = document.getElementById('notifList');
+  if(!list) return;
+  const notifs = getLocalNotifs();
+  if(!notifs.length){
+    list.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">Henüz bildirim yok</div>';
+    return;
+  }
+  list.innerHTML = '';
+  notifs.forEach((n,i)=>{
+    const d = document.createElement('div');
+    const ago = formatAgo(n.time);
+    d.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-radius:12px;background:'+(n.read?'transparent':'#F7F4FF');
+    d.innerHTML = '<div style="font-size:20px;flex-shrink:0">'+n.icon+'</div>'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:'+(n.read?'500':'700')+'">'+n.text+'</div>'
+      +'<div style="font-size:10px;color:var(--muted);margin-top:2px">'+ago+'</div></div>';
+    if(n.action) d.style.cursor='pointer', d.onclick=()=>{ n.read=true; saveLocalNotifs(notifs); renderNotifList(); n.action(); };
+    list.appendChild(d);
+  });
+}
+
+function formatAgo(time){
+  const diff = Date.now() - time;
+  const min = Math.floor(diff/60000);
+  if(min < 1) return 'Az önce';
+  if(min < 60) return min+'dk önce';
+  const hr = Math.floor(min/60);
+  if(hr < 24) return hr+'s önce';
+  return Math.floor(hr/24)+'g önce';
+}
+
+function toggleNotifPanel(){
+  const panel = document.getElementById('notifPanel');
+  const overlay = document.getElementById('notifPanelOverlay');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  overlay.style.display = isOpen ? 'none' : 'block';
+  if(!isOpen){
+    // Hepsini okundu işaretle
+    const notifs = getLocalNotifs();
+    notifs.forEach(n=>n.read=true);
+    saveLocalNotifs(notifs);
+    renderNotifBadge();
+    renderNotifList();
+  }
+}
+
+function clearNotifs(){
+  saveLocalNotifs([]);
+  renderNotifBadge();
+  renderNotifList();
+}
+
+// Başlangıçta badge güncelle
+renderNotifBadge();
+
+// checkFriendRequests'i bildirim merkezine bağla
+const _origCheckFriendReqs = checkFriendRequests;
+checkFriendRequests = async function(){
+  const myCode = localStorage.getItem('act_my_code');
+  if(!myCode) return;
+  try {
+    const res = await fetch('/api/friends?requests='+myCode);
+    const data = await res.json();
+    if(!data.requests||!data.requests.length) return;
+    data.requests.forEach(r => {
+      addLocalNotif('👥', r.fromName+' sana arkadaşlık isteği gönderdi!', ()=>showFriendRequestUI(r));
+      showFriendRequestUI(r);
+    });
+  } catch(e){}
+};
+
+// checkNotifications'ı bildirim merkezine bağla
+const _origCheckNotifs = checkNotifications;
+checkNotifications = async function(){
+  const myCode = localStorage.getItem('act_my_code');
+  if(!myCode) return;
+  try {
+    const res = await fetch('/api/notify?code='+myCode);
+    const data = await res.json();
+    if(!data.notifs||!data.notifs.length) return;
+    data.notifs.forEach(n=>{
+      const msg = n.type==='like' ? n.fromName+' gönderini beğendi ❤️' : n.fromName+' sana bildirdi';
+      addLocalNotif('❤️', msg, ()=>showScreen('social'));
+      if(Notification.permission==='granted'){
+        new Notification('🐸 Froguary', { body: msg, icon: '/icon-192.png' });
+      }
+    });
+  } catch(e){}
+};
+
+
 renderStreakScore();
 renderBadges();
 // Açılışta bildirim kontrolü (3sn bekle, kod oluşsun)
