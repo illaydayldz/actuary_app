@@ -72,6 +72,40 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    // Yorum ekle
+    if (action === 'comment') {
+      const { postId, commentText, commenterName, commenterCode, commenterPhoto } = req.body;
+      const raw = await redis('LRANGE', 'wall:global', 0, 49);
+      const posts = (raw || []).map(p => { try { return JSON.parse(p); } catch { return null; } }).filter(Boolean);
+      const idx = posts.findIndex(p => p.id === postId);
+      if (idx >= 0) {
+        if(!posts[idx].comments) posts[idx].comments = [];
+        posts[idx].comments.push({
+          id: Date.now()+'',
+          name: commenterName,
+          code: commenterCode,
+          photo: commenterPhoto||'',
+          text: commentText,
+          date: new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+        });
+        await redis('LSET', 'wall:global', idx, JSON.stringify(posts[idx]));
+      }
+      return res.status(200).json({ ok: true });
+    }
+
+    // Yorum sil
+    if (action === 'deleteComment') {
+      const { postId, commentId, code: delCode } = req.body;
+      const raw = await redis('LRANGE', 'wall:global', 0, 49);
+      const posts = (raw || []).map(p => { try { return JSON.parse(p); } catch { return null; } }).filter(Boolean);
+      const idx = posts.findIndex(p => p.id === postId);
+      if (idx >= 0 && posts[idx].comments) {
+        posts[idx].comments = posts[idx].comments.filter(c => c.id !== commentId || c.code !== delCode);
+        await redis('LSET', 'wall:global', idx, JSON.stringify(posts[idx]));
+      }
+      return res.status(200).json({ ok: true });
+    }
+
     // Gönderi beğen
     if (action === 'like') {
       const raw = await redis('LRANGE', 'wall:global', 0, 49);
