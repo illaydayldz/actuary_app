@@ -679,11 +679,20 @@ textarea.qa{width:100%;min-height:120px;border:none;outline:none;background:#F7F
     <div id="socialWallPanel">
       <div style="background:#F7F4EF;border-radius:18px;padding:14px;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <div id="socialAvatar" style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0">?</div>
-          <textarea id="wallInput" maxlength="120" placeholder="Bugünkü çalışmanı paylaş... 🐸" style="flex:1;border:none;background:transparent;font-size:13px;outline:none;resize:none;min-height:52px;line-height:1.5;font-family:inherit"></textarea>
+          <div id="socialAvatar" style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden">?</div>
+          <textarea id="wallInput" maxlength="300" placeholder="Bugünkü çalışmanı paylaş... 🐸" style="flex:1;border:none;background:transparent;font-size:13px;outline:none;resize:none;min-height:52px;line-height:1.5;font-family:inherit"></textarea>
         </div>
+        <!-- Resim önizleme -->
+        <div id="wallImagePreview" style="display:none;margin-bottom:10px;position:relative">
+          <img id="wallPreviewImg" style="width:100%;border-radius:12px;max-height:200px;object-fit:cover">
+          <button onclick="clearWallImage()" style="position:absolute;top:6px;right:6px;border:none;background:rgba(0,0,0,.5);color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:12px">✕</button>
+        </div>
+        <input type="file" id="wallImageInput" accept="image/*,.gif" style="display:none" onchange="previewWallImage(this)">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <button onclick="shareProgressPost()" style="padding:8px 14px;border-radius:12px;background:#F0EEFF;color:#7B5EA7;border:none;font-size:12px;font-weight:800;cursor:pointer">📊 İlerleme Paylaş</button>
+          <div style="display:flex;gap:6px">
+            <button onclick="shareProgressPost()" style="padding:8px 12px;border-radius:12px;background:#F0EEFF;color:#7B5EA7;border:none;font-size:12px;font-weight:800;cursor:pointer">📊</button>
+            <button onclick="document.getElementById('wallImageInput').click()" style="padding:8px 12px;border-radius:12px;background:#F0EEFF;color:#7B5EA7;border:none;font-size:12px;font-weight:800;cursor:pointer">📷</button>
+          </div>
           <button onclick="postToWall()" style="padding:8px 18px;border-radius:12px;background:#1D2033;color:#fff;border:none;font-weight:800;font-size:12px;cursor:pointer">Paylaş ✈️</button>
         </div>
       </div>
@@ -2160,19 +2169,62 @@ showScreen = function(id){
 // ═══════════════════════════════════
 function getWallPosts(){ return JSON.parse(localStorage.getItem('act_wall')||'[]'); }
 
+function previewWallImage(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('wallPreviewImg').src = e.target.result;
+    document.getElementById('wallImagePreview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearWallImage(){
+  document.getElementById('wallImagePreview').style.display = 'none';
+  document.getElementById('wallPreviewImg').src = '';
+  document.getElementById('wallImageInput').value = '';
+}
+
 async function postToWall(){
   const inp = document.getElementById('wallInput');
   const text = inp.value.trim();
-  if(!text) return;
+  const imgEl = document.getElementById('wallPreviewImg');
+  const imgSrc = imgEl.src;
+  const hasImage = document.getElementById('wallImagePreview').style.display !== 'none' && imgSrc;
+  if(!text && !hasImage) return;
   const name = localStorage.getItem('act_username')||'Sen';
   const code = localStorage.getItem('act_my_code')||'';
   const score = parseInt(localStorage.getItem('act_score'))||0;
   const streak = parseInt(localStorage.getItem('act_streak'))||0;
+
+  // Cloudinary'e resim yükle
+  let imageUrl = '';
+  if(hasImage){
+    const fileInput = document.getElementById('wallImageInput');
+    if(fileInput.files[0]){
+      try {
+        showXPPopup('Resim yükleniyor...');
+        imageUrl = await uploadToCloudinary(fileInput.files[0]);
+      } catch(e){ showXPPopup('Resim yüklenemedi!'); }
+    }
+  }
+
   inp.value = '';
+  clearWallImage();
+
+  // Düzenleme moduysa önce sil
+  if(window._editingPostId){
+    try { await fetch('/api/friends',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deletePost',postId:window._editingPostId,code})}); } catch(e){}
+    window._editingPostId = null;
+    const btn = document.querySelector('[onclick="postToWall()"]');
+    if(btn) btn.textContent = 'Paylaş ✈️';
+  }
+
   try {
     await fetch('/api/friends', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'post', code, name, score, streak, text })
+      body: JSON.stringify({ action:'post', code, name, score, streak, text, imageUrl, photo: localStorage.getItem('act_profile_photo')||'' })
     });
   } catch(e){ console.log('Post failed',e); }
   addScore(5, 'Paylaşım yaptın!');
@@ -2250,8 +2302,15 @@ async function renderWall(){
   wrap.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">Yükleniyor...</div>';
   const myName = localStorage.getItem('act_username')||'Sen';
   const myCode = localStorage.getItem('act_my_code')||'';
+  const myPhoto = localStorage.getItem('act_profile_photo')||'';
 
-  // Arkadaş kodlarını al
+  // Sosyal avatar güncelle
+  const sa = document.getElementById('socialAvatar');
+  if(sa){
+    if(myPhoto){ sa.innerHTML='<img src="'+myPhoto+'" style="width:100%;height:100%;object-fit:cover;border-radius:12px">'; }
+    else { sa.textContent = (myName[0]||'?').toUpperCase(); }
+  }
+
   const friends = JSON.parse(localStorage.getItem('act_friends')||'[]');
   const friendCodes = friends.map(f=>f.code||f);
   const allowedCodes = [myCode, ...friendCodes];
@@ -2261,7 +2320,6 @@ async function renderWall(){
     const res = await fetch('/api/friends?wall=1');
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
-    // Sadece ben ve arkadaşlarımın gönderilerini göster
     posts = (data.posts||[]).filter(p=> !p.code || allowedCodes.includes(p.code));
   } catch(e){
     wrap.innerHTML = '<div style="color:#D85A30;font-size:12px;text-align:center;padding:12px">Hata: '+e.message+'</div>';
@@ -2273,17 +2331,39 @@ async function renderWall(){
     const isMe = p.code===myCode || p.name===myName;
     const d = document.createElement('div');
     d.style.cssText = 'background:#F7F4EF;border-radius:18px;padding:14px;margin-bottom:8px;border:1.5px solid '+(isMe?'#E0DCF8':'transparent');
+    
+    // Avatar
+    let avatarHtml = '';
+    if(p.photo){ avatarHtml = '<img src="'+p.photo+'" style="width:36px;height:36px;border-radius:12px;object-fit:cover;flex-shrink:0">'; }
+    else { avatarHtml = '<div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0">'+(p.name||'?')[0].toUpperCase()+'</div>'; }
+
     d.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
-      +avatarHTML(p, 36, 12)
+      +avatarHtml
       +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800">'+p.name+(isMe?' <span style="font-size:10px;background:#F0EEFF;color:#7B5EA7;padding:2px 6px;border-radius:6px">sen</span>':'')+'</div>'
       +'<div style="font-size:10px;color:var(--muted)">'+(p.date||'')+' · ⭐'+(p.score||0)+' · 🔥'+(p.streak||0)+' gün</div></div>'
-      +(isMe?'<button onclick="deleteWallPost(\''+p.id+'\')" style="border:none;background:none;color:#ddd;font-size:14px;cursor:pointer;flex-shrink:0">✕</button>':'')
+      +(isMe?'<div style="display:flex;gap:4px">'
+        +'<button onclick="editWallPost(\''+p.id+'\',\''+encodeURIComponent(p.text||'')+'\' )" style="border:none;background:#F0EEFF;color:#7B5EA7;font-size:11px;font-weight:800;padding:4px 8px;border-radius:8px;cursor:pointer">✏️</button>'
+        +'<button onclick="deleteWallPost(\''+p.id+'\')" style="border:none;background:none;color:#ddd;font-size:14px;cursor:pointer">✕</button>'
+        +'</div>':'')
       +'</div>'
-      +'<div style="font-size:13px;line-height:1.6;margin-bottom:10px">'+(p.text||'')+'</div>'
+      +(p.text?'<div style="font-size:13px;line-height:1.6;margin-bottom:10px">'+p.text+'</div>':'')
+      +(p.imageUrl?'<img src="'+p.imageUrl+'" style="width:100%;border-radius:12px;margin-bottom:10px;max-height:240px;object-fit:cover">':'')
       +'<button onclick="likePost(\''+p.id+'\')" style="border:none;background:#fff;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#7B5EA7">❤️ '+(p.likes||0)+'</button>';
     wrap.appendChild(d);
   });
 }
+
+function editWallPost(postId, encodedText){
+  const text = decodeURIComponent(encodedText);
+  const inp = document.getElementById('wallInput');
+  inp.value = text;
+  inp.focus();
+  // Düzenleme modunda eski gönderiyi sil
+  window._editingPostId = postId;
+  const btn = document.querySelector('[onclick="postToWall()"]');
+  if(btn) btn.textContent = 'Güncelle ✏️';
+}
+
 
 async function deleteWallPost(postId){
   try {
