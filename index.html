@@ -2079,10 +2079,17 @@ function renderBadges(){
 // Konu tamamlayınca puan
 const _origUpdateCounts = updateCounts;
 updateCounts = function(){
-  const before = doneCount();
+  // doneCount localStorage'dan okur, _origUpdateCounts çağrılmadan önce zaten güncel
+  // Bu yüzden act_last_done ile karşılaştırıyoruz
+  const before = parseInt(localStorage.getItem('act_last_done'))||0;
   _origUpdateCounts();
   const after = doneCount();
-  if(after > before) { addScore((after-before)*10, 'Konu tamamlandı!'); checkBadges(); }
+  localStorage.setItem('act_last_done', after);
+  if(after > before){
+    addScore((after-before)*10, 'Konu tamamlandı!');
+    checkBadges();
+    syncMyProfile();
+  }
 };
 
 // Pomodoro tamamlanınca puan (pomodoro interval'ine hook)
