@@ -112,7 +112,7 @@ textarea.qa{width:100%;min-height:120px;border:none;outline:none;background:#F7F
 
       <div style="margin-bottom:12px">
         <div style="font-size:11px;font-weight:800;color:#AEE1CF;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">SINAV TARİHİN</div>
-        <input id="firstExamDate" type="date" style="width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid #EDE8FF;font-size:14px;outline:none;background:#F7F4EF">
+        <input id="firstExamDate" type="date" style="width:100%;max-width:100%;padding:12px 10px;border-radius:14px;border:1.5px solid #EDE8FF;font-size:14px;outline:none;background:#F7F4EF;box-sizing:border-box;-webkit-appearance:none">
       </div>
 
       <div style="margin-bottom:12px">
@@ -130,19 +130,28 @@ textarea.qa{width:100%;min-height:120px;border:none;outline:none;background:#F7F
       </div>
 
       <div style="margin-bottom:20px">
-        <div style="font-size:11px;font-weight:800;color:#B8A1FF;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">🔔 BİLDİRİM SAATLERİ</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-          <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Sabah</div>
-            <input id="firstNotif1" type="time" value="09:00" style="width:100%;padding:10px;border-radius:14px;border:1.5px solid #EDE8FF;font-size:13px;outline:none;background:#F7F4EF">
+        <div style="font-size:11px;font-weight:800;color:#B8A1FF;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">🔔 BİLDİRİM SAATLERİ</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;background:#F7F4EF;border:1.5px solid #EDE8FF" id="notifRow1">
+            <div onclick="toggleNotifRow(1)" id="notifToggle1" style="width:36px;height:20px;border-radius:10px;background:#1D2033;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s">
+              <div style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;right:2px;transition:right .2s"></div>
+            </div>
+            <div style="font-size:12px;font-weight:700;color:#1D2033;width:80px;flex-shrink:0">☀️ Sabah</div>
+            <input id="firstNotif1" type="time" value="09:00" style="flex:1;padding:6px 10px;border-radius:10px;border:1.5px solid #EDE8FF;font-size:13px;outline:none;background:#fff">
           </div>
-          <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Öğleden sonra</div>
-            <input id="firstNotif2" type="time" value="14:00" style="width:100%;padding:10px;border-radius:14px;border:1.5px solid #EDE8FF;font-size:13px;outline:none;background:#F7F4EF">
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;background:#F7F4EF;border:1.5px solid #EDE8FF" id="notifRow2">
+            <div onclick="toggleNotifRow(2)" id="notifToggle2" style="width:36px;height:20px;border-radius:10px;background:#1D2033;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s">
+              <div style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;right:2px;transition:right .2s"></div>
+            </div>
+            <div style="font-size:12px;font-weight:700;color:#1D2033;width:80px;flex-shrink:0">🌤 Öğle</div>
+            <input id="firstNotif2" type="time" value="14:00" style="flex:1;padding:6px 10px;border-radius:10px;border:1.5px solid #EDE8FF;font-size:13px;outline:none;background:#fff">
           </div>
-          <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Akşam</div>
-            <input id="firstNotif3" type="time" value="20:00" style="width:100%;padding:10px;border-radius:14px;border:1.5px solid #EDE8FF;font-size:13px;outline:none;background:#F7F4EF">
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;background:#F7F4EF;border:1.5px solid #EDE8FF" id="notifRow3">
+            <div onclick="toggleNotifRow(3)" id="notifToggle3" style="width:36px;height:20px;border-radius:10px;background:#1D2033;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s">
+              <div style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;right:2px;transition:right .2s"></div>
+            </div>
+            <div style="font-size:12px;font-weight:700;color:#1D2033;width:80px;flex-shrink:0">🌙 Akşam</div>
+            <input id="firstNotif3" type="time" value="20:00" style="flex:1;padding:6px 10px;border-radius:10px;border:1.5px solid #EDE8FF;font-size:13px;outline:none;background:#fff">
           </div>
         </div>
       </div>
@@ -1668,6 +1677,28 @@ function deleteItem(si,ti,ii){
 renderStudyTabs();
 renderStudyContent();
 
+function toggleNotifRow(n){
+  const toggle = document.getElementById('notifToggle'+n);
+  const input = document.getElementById('firstNotif'+n);
+  const row = document.getElementById('notifRow'+n);
+  const isOn = toggle.dataset.on !== 'false';
+  const nowOn = !isOn;
+  toggle.dataset.on = nowOn;
+  toggle.style.background = nowOn ? '#1D2033' : '#ddd';
+  toggle.querySelector('div').style.right = nowOn ? '2px' : '18px';
+  input.style.opacity = nowOn ? '1' : '0.4';
+  input.disabled = !nowOn;
+  row.style.borderColor = nowOn ? '#EDE8FF' : '#eee';
+}
+
+// Init toggles - all on by default
+window.addEventListener('DOMContentLoaded', ()=>{
+  [1,2,3].forEach(n=>{
+    const t = document.getElementById('notifToggle'+n);
+    if(t) t.dataset.on = 'true';
+  });
+});
+
 function getNotifTimes(){
   return {
     t1: localStorage.getItem('act_notif_t1')||'09:00',
@@ -1708,9 +1739,12 @@ function submitFirstSetup(){
   const n1 = document.getElementById('firstNotif1').value;
   const n2 = document.getElementById('firstNotif2').value;
   const n3 = document.getElementById('firstNotif3').value;
-  if(n1) localStorage.setItem('act_notif_t1', n1);
-  if(n2) localStorage.setItem('act_notif_t2', n2);
-  if(n3) localStorage.setItem('act_notif_t3', n3);
+  const t1on = document.getElementById('notifToggle1')?.dataset.on !== 'false';
+  const t2on = document.getElementById('notifToggle2')?.dataset.on !== 'false';
+  const t3on = document.getElementById('notifToggle3')?.dataset.on !== 'false';
+  if(n1 && t1on) localStorage.setItem('act_notif_t1', n1); else localStorage.removeItem('act_notif_t1');
+  if(n2 && t2on) localStorage.setItem('act_notif_t2', n2); else localStorage.removeItem('act_notif_t2');
+  if(n3 && t3on) localStorage.setItem('act_notif_t3', n3); else localStorage.removeItem('act_notif_t3');
   updateExamDateUI();
   updateGoalsUI();
   updateDays();
@@ -1784,10 +1818,10 @@ function scheduleAllReminders(){
     const nt = getNotifTimes();
     const parse = t => ({ hour: parseInt(t.split(':')[0]), min: parseInt(t.split(':')[1]) });
     const reminders = [
-      {time: parse(nt.t1), type:'morning',   title:'🐸 Günaydın!'},
-      {time: parse(nt.t2), type:'afternoon', title:'🐸 Ara Kontrol'},
-      {time: parse(nt.t3), type:'evening',   title:'🐸 Gün Sonu'},
-    ];
+      nt.t1 ? {time: parse(nt.t1), type:'morning',   title:'🐸 Günaydın!'} : null,
+      nt.t2 ? {time: parse(nt.t2), type:'afternoon', title:'🐸 Ara Kontrol'} : null,
+      nt.t3 ? {time: parse(nt.t3), type:'evening',   title:'🐸 Gün Sonu'} : null,
+    ].filter(Boolean);
     reminders.forEach(r=>{
       reg.active.postMessage({
         type: 'SCHEDULE_NOTIFICATION',
