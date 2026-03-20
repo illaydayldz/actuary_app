@@ -197,6 +197,7 @@ textarea.qa{width:100%;min-height:120px;border:none;outline:none;background:#F7F
       <button class="drawer-item" onclick="closeDrawer();exportData()"><div class="drawer-ico" style="background:#EEF8F4">📤</div>Verileri Yedekle</button>
       <button class="drawer-item" onclick="closeDrawer();importData()"><div class="drawer-ico" style="background:#EDF8F4">📥</div>Yedek Yükle</button>
       <button class="drawer-item" onclick="closeDrawer();requestNotificationPermission()"><div class="drawer-ico" style="background:#FFF0E8">🔔</div>Bildirim Aç</button>
+      <button class="drawer-item" onclick="closeDrawer();testNotification()"><div class="drawer-ico" style="background:#FEE8E8">🧪</div>Bildirim Test</button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
     </div>
   </div>
@@ -1814,7 +1815,8 @@ function scheduleAllReminders(){
   if(localStorage.getItem('act_notif')!=='1') return;
   if(!('serviceWorker' in navigator)) return;
   navigator.serviceWorker.ready.then(reg=>{
-    if(!reg.active) return;
+    const sw = reg.active || reg.waiting || reg.installing;
+    if(!sw) return;
     const nt = getNotifTimes();
     const parse = t => ({ hour: parseInt(t.split(':')[0]), min: parseInt(t.split(':')[1]) });
     const reminders = [
@@ -1823,13 +1825,22 @@ function scheduleAllReminders(){
       nt.t3 ? {time: parse(nt.t3), type:'evening',   title:'🐸 Gün Sonu'} : null,
     ].filter(Boolean);
     reminders.forEach(r=>{
-      reg.active.postMessage({
+      sw.postMessage({
         type: 'SCHEDULE_NOTIFICATION',
         title: r.title,
         body: getReminderBody(r.type),
         delay: getDelayUntil(r.time.hour, r.time.min)
       });
     });
+  });
+}
+
+function testNotification(){
+  if(!('serviceWorker' in navigator)) { alert('SW yok'); return; }
+  navigator.serviceWorker.ready.then(reg=>{
+    const sw = reg.active || reg.waiting || reg.installing;
+    if(!sw) { alert('SW active değil'); return; }
+    sw.postMessage({ type:'TEST' });
   });
 }
 
