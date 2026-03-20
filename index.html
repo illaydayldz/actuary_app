@@ -2226,12 +2226,19 @@ async function renderWall(){
   wrap.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">Yükleniyor...</div>';
   const myName = localStorage.getItem('act_username')||'Sen';
   const myCode = localStorage.getItem('act_my_code')||'';
+
+  // Arkadaş kodlarını al
+  const friends = JSON.parse(localStorage.getItem('act_friends')||'[]');
+  const friendCodes = friends.map(f=>f.code||f);
+  const allowedCodes = [myCode, ...friendCodes];
+
   let posts = [];
   try {
     const res = await fetch('/api/friends?wall=1');
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
-    posts = data.posts || [];
+    // Sadece ben ve arkadaşlarımın gönderilerini göster
+    posts = (data.posts||[]).filter(p=> !p.code || allowedCodes.includes(p.code));
   } catch(e){
     wrap.innerHTML = '<div style="color:#D85A30;font-size:12px;text-align:center;padding:12px">Hata: '+e.message+'</div>';
     return;
@@ -2239,17 +2246,29 @@ async function renderWall(){
   if(!posts.length){ wrap.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;background:#F7F4EF;border-radius:14px">Henüz paylaşım yok. İlk sen paylaş! 🐸</div>'; return; }
   wrap.innerHTML = '';
   posts.forEach((p)=>{
-    const isMe = p.name===myName || p.code===myCode;
+    const isMe = p.code===myCode || p.name===myName;
     const d = document.createElement('div');
     d.style.cssText = 'background:#F7F4EF;border-radius:18px;padding:14px;margin-bottom:8px;border:1.5px solid '+(isMe?'#E0DCF8':'transparent');
     d.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
       +'<div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0">'+(p.name||'?')[0].toUpperCase()+'</div>'
       +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800">'+p.name+(isMe?' <span style="font-size:10px;background:#F0EEFF;color:#7B5EA7;padding:2px 6px;border-radius:6px">sen</span>':'')+'</div>'
-      +'<div style="font-size:10px;color:var(--muted)">'+(p.date||'')+' · ⭐'+(p.score||0)+' · 🔥'+(p.streak||0)+' gün</div></div></div>'
+      +'<div style="font-size:10px;color:var(--muted)">'+(p.date||'')+' · ⭐'+(p.score||0)+' · 🔥'+(p.streak||0)+' gün</div></div>'
+      +(isMe?'<button onclick="deleteWallPost(\''+p.id+'\')" style="border:none;background:none;color:#ddd;font-size:14px;cursor:pointer;flex-shrink:0">✕</button>':'')
+      +'</div>'
       +'<div style="font-size:13px;line-height:1.6;margin-bottom:10px">'+(p.text||'')+'</div>'
       +'<button onclick="likePost(\''+p.id+'\')" style="border:none;background:#fff;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#7B5EA7">❤️ '+(p.likes||0)+'</button>';
     wrap.appendChild(d);
   });
+}
+
+async function deleteWallPost(postId){
+  try {
+    await fetch('/api/friends', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'deletePost', postId, code: localStorage.getItem('act_my_code') })
+    });
+  } catch(e){}
+  renderWall();
 }
 
 
@@ -2380,15 +2399,14 @@ async function renderLeaderboard(){
   if(!list) return;
   list.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">Yükleniyor...</div>';
   const myCode = localStorage.getItem('act_my_code');
-  const me = { name: localStorage.getItem('act_username')||'Sen', score: parseInt(localStorage.getItem('act_score'))||0, streak: parseInt(localStorage.getItem('act_streak'))||0, done: doneCount(), isMe:true };
+  const me = { name: localStorage.getItem('act_username')||'Sen', score: parseInt(localStorage.getItem('act_score'))||0, streak: parseInt(localStorage.getItem('act_streak'))||0, done: doneCount(), isMe:true, code: myCode };
 
-  // Sunucudan arkadaş listesini çek
   let friends = JSON.parse(localStorage.getItem('act_friends')||'[]');
   if(myCode){
     try {
       const res = await fetch('/api/friends?friendlist='+myCode);
       const data = await res.json();
-      if(data.profiles && data.profiles.length){
+      if(data.profiles){
         friends = data.profiles;
         localStorage.setItem('act_friends', JSON.stringify(friends));
       }
@@ -2398,19 +2416,57 @@ async function renderLeaderboard(){
   const all = [me, ...friends].sort((a,b)=>b.score-a.score);
   list.innerHTML = '';
   if(all.length===1){
-    list.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Arkadaş ekleyince burada görünecek</div>';
+    list.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Arkadaş ekleyince burada görünecek 🐸</div>';
     return;
   }
   const medals = ['🥇','🥈','🥉'];
   all.forEach((p,i)=>{
     const d = document.createElement('div');
-    d.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:'+(p.isMe?'linear-gradient(135deg,#F0EEFF,#E8E3FF)':'#F7F4EF')+';margin-bottom:6px;border:1.5px solid '+(p.isMe?'#D5C8FF':'transparent');
+    d.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:'+(p.isMe?'linear-gradient(135deg,#F0EEFF,#E8E3FF)':'#F7F4EF')+';margin-bottom:6px;border:1.5px solid '+(p.isMe?'#D5C8FF':'transparent')+(p.isMe?'':';cursor:pointer');
+    if(!p.isMe) d.onclick = ()=>showFriendProfile(p);
     d.innerHTML = '<div style="font-size:18px;width:24px;text-align:center">'+(medals[i]||'#'+(i+1))+'</div>'
       +'<div style="width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">'+p.name[0].toUpperCase()+'</div>'
       +'<div style="flex:1"><div style="font-size:13px;font-weight:800">'+p.name+(p.isMe?' (sen)':'')+'</div><div style="font-size:11px;color:var(--muted)">🔥'+p.streak+' gün · 📚'+p.done+' konu</div></div>'
       +'<div style="text-align:right"><div style="font-size:15px;font-weight:800;color:#7B5EA7">'+p.score+'</div><div style="font-size:10px;color:var(--muted)">XP</div></div>';
     list.appendChild(d);
   });
+}
+
+function showFriendProfile(p){
+  const existing = document.getElementById('friendProfileModal');
+  if(existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'friendProfileModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(29,32,51,.7);z-index:400;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:28px 28px 0 0;padding:24px;width:100%;max-width:430px;max-height:80vh;overflow-y:auto">
+      <div style="width:40px;height:4px;background:#E0DCF8;border-radius:99px;margin:0 auto 20px"></div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+        <div style="width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff">${p.name[0].toUpperCase()}</div>
+        <div>
+          <div style="font-size:20px;font-weight:800">${p.name}</div>
+          <div style="font-size:12px;color:var(--muted)">🔑 ${p.code||'—'}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+        <div style="background:#F0EEFF;border-radius:14px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#7B5EA7">${p.score||0}</div>
+          <div style="font-size:10px;color:#9B7EC8;text-transform:uppercase;margin-top:2px">XP</div>
+        </div>
+        <div style="background:#FFF3E8;border-radius:14px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#E07820">${p.streak||0}</div>
+          <div style="font-size:10px;color:#E07820;text-transform:uppercase;margin-top:2px">Streak</div>
+        </div>
+        <div style="background:#EEF8F4;border-radius:14px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#3A8A6A">${p.done||0}</div>
+          <div style="font-size:10px;color:#5AAA8A;text-transform:uppercase;margin-top:2px">Konu</div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('friendProfileModal').remove()" style="width:100%;padding:13px;border-radius:16px;background:#F7F4EF;border:none;font-weight:800;font-size:14px;cursor:pointer">Kapat</button>
+    </div>
+  `;
+  modal.onclick = (e)=>{ if(e.target===modal) modal.remove(); };
+  document.body.appendChild(modal);
 }
 
 // ═══════════════════════════════════
