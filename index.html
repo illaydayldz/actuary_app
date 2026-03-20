@@ -2112,15 +2112,20 @@ showScreen = function(id){
 // ═══════════════════════════════════
 function getWallPosts(){ return JSON.parse(localStorage.getItem('act_wall')||'[]'); }
 
-function postToWall(){
+async function postToWall(){
   const inp = document.getElementById('wallInput');
   const text = inp.value.trim();
   if(!text) return;
   const name = localStorage.getItem('act_username')||'Sen';
-  const posts = getWallPosts();
-  posts.unshift({ text, name, score: parseInt(localStorage.getItem('act_score'))||0, streak: parseInt(localStorage.getItem('act_streak'))||0, date: new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}), likes:0 });
-  if(posts.length>30) posts.pop();
-  localStorage.setItem('act_wall', JSON.stringify(posts));
+  const code = localStorage.getItem('act_my_code')||'';
+  const score = parseInt(localStorage.getItem('act_score'))||0;
+  const streak = parseInt(localStorage.getItem('act_streak'))||0;
+  try {
+    await fetch('/api/friends', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'post', code, name, score, streak, text })
+    });
+  } catch(e){ console.log('Post failed',e); }
   inp.value = '';
   addScore(5, 'Paylaşım yaptın!');
   renderWall();
@@ -2133,11 +2138,13 @@ function shareProgressPost(){
   document.getElementById('wallInput').value = done+' konu tamamladım 📚 | '+score+' XP ⭐ | '+streak+' günlük streak 🔥';
 }
 
-async function likePost(i){
-  const posts = getWallPosts();
-  const post = posts[i];
-  posts[i].likes = (posts[i].likes||0)+1;
-  localStorage.setItem('act_wall', JSON.stringify(posts));
+async function likePost(postId){
+  try {
+    await fetch('/api/friends', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'like', postId })
+    });
+  } catch(e){}
   renderWall();
   // Gönderi sahibine bildirim gönder (kendi gönderine değilse)
   const myName = localStorage.getItem('act_username')||'Sen';
@@ -2189,30 +2196,34 @@ function deletePost(i){
   renderWall();
 }
 
-function renderWall(){
+async function renderWall(){
   const wrap = document.getElementById('wallPosts');
   if(!wrap) return;
-  const posts = getWallPosts();
+  wrap.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">Yükleniyor...</div>';
   const myName = localStorage.getItem('act_username')||'Sen';
+  const myCode = localStorage.getItem('act_my_code')||'';
+  let posts = [];
+  try {
+    const res = await fetch('/api/friends?wall=1');
+    const data = await res.json();
+    posts = data.posts || [];
+  } catch(e){ posts = getWallPosts(); }
   if(!posts.length){ wrap.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;background:#F7F4EF;border-radius:14px">Henüz paylaşım yok. İlk sen paylaş! 🐸</div>'; return; }
   wrap.innerHTML = '';
   posts.forEach((p,i)=>{
-    const isMe = p.name===myName;
+    const isMe = p.name===myName || p.code===myCode;
     const d = document.createElement('div');
-    d.style.cssText = 'background:#F7F4EF;border-radius:18px;padding:14px;border:1.5px solid '+(isMe?'#E0DCF8':'transparent');
-    d.innerHTML = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0">${p.name[0].toUpperCase()}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:800">${p.name}${isMe?' <span style="font-size:10px;background:#F0EEFF;color:#7B5EA7;padding:2px 6px;border-radius:6px">sen</span>':''}</div>
-        <div style="font-size:10px;color:var(--muted)">${p.date} · ⭐${p.score||0} · 🔥${p.streak||0} gün</div>
-      </div>
-      ${isMe?`<button onclick="deletePost(${i})" style="border:none;background:none;color:#ddd;font-size:14px;cursor:pointer">✕</button>`:''}
-    </div>
-    <div style="font-size:13px;line-height:1.6;margin-bottom:10px">${p.text}</div>
-    <button onclick="likePost(${i})" style="border:none;background:#fff;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#7B5EA7">❤️ ${p.likes||0}</button>`;
+    d.style.cssText = 'background:#F7F4EF;border-radius:18px;padding:14px;margin-bottom:8px;border:1.5px solid '+(isMe?'#E0DCF8':'transparent');
+    d.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
+      +'<div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#D5C8FF,#B8A1FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0">'+(p.name||'?')[0].toUpperCase()+'</div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800">'+p.name+(isMe?' <span style="font-size:10px;background:#F0EEFF;color:#7B5EA7;padding:2px 6px;border-radius:6px">sen</span>':'')+'</div>'
+      +'<div style="font-size:10px;color:var(--muted)">'+(p.date||'')+' · ⭐'+(p.score||0)+' · 🔥'+(p.streak||0)+' gün</div></div></div>'
+      +'<div style="font-size:13px;line-height:1.6;margin-bottom:10px">'+(p.text||'')+'</div>'
+      +'<button onclick="likePost(\''+p.id+'\')" style="border:none;background:#fff;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#7B5EA7">❤️ '+(p.likes||0)+'</button>';
     wrap.appendChild(d);
   });
 }
+
 
 function switchSocialTab(tab){
   const wall = document.getElementById('socialWallPanel');
