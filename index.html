@@ -2120,15 +2120,15 @@ async function postToWall(){
   const code = localStorage.getItem('act_my_code')||'';
   const score = parseInt(localStorage.getItem('act_score'))||0;
   const streak = parseInt(localStorage.getItem('act_streak'))||0;
+  inp.value = '';
   try {
     await fetch('/api/friends', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'post', code, name, score, streak, text })
     });
   } catch(e){ console.log('Post failed',e); }
-  inp.value = '';
   addScore(5, 'Paylaşım yaptın!');
-  renderWall();
+  await renderWall();
 }
 
 function shareProgressPost(){
