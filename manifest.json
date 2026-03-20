@@ -1,7 +1,6 @@
 {
   "name": "Froguary",
   "short_name": "Froguary",
-  "description": "Aktüerya sınav hazırlık uygulaması",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ECE6DD",
