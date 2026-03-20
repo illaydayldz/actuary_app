@@ -17,9 +17,8 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // POST - profil kaydet veya istek gönder
   if (req.method === 'POST') {
-    const { action, code, name, score, streak, done, toCode, fromCode, fromName } = req.body;
+    const { action, code, name, score, streak, done, toCode, fromCode, fromName, myCode, friendCode, text, likes, postId } = req.body;
 
     // Profil kaydet
     if (!action || action === 'save') {
@@ -29,7 +28,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // Arkadaşlık isteği gönder
+    // Arkadaşlık isteği
     if (action === 'request') {
       const req_data = JSON.stringify({ fromCode, fromName, time: Date.now() });
       await redis('LPUSH', `requests:${toCode}`, req_data);
@@ -38,31 +37,42 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // İsteği kabul et - çift yönlü ekle
+    // Arkadaşlık kabul
     if (action === 'accept') {
-      const { myCode, myName, friendCode } = req.body;
-      // Kendi listeme arkadaşı ekle
       const myFriends = JSON.parse(await redis('GET', `friends:${myCode}`) || '[]');
       if (!myFriends.includes(friendCode)) myFriends.push(friendCode);
       await redis('SET', `friends:${myCode}`, JSON.stringify(myFriends), 'EX', 86400 * 365);
-      // Arkadaşın listesine beni ekle
       const theirFriends = JSON.parse(await redis('GET', `friends:${friendCode}`) || '[]');
       if (!theirFriends.includes(myCode)) theirFriends.push(myCode);
       await redis('SET', `friends:${friendCode}`, JSON.stringify(theirFriends), 'EX', 86400 * 365);
       return res.status(200).json({ ok: true });
     }
 
-    // İsteği reddet
-    if (action === 'reject') {
+    // Gönderi paylaş
+    if (action === 'post') {
+      const post = JSON.stringify({ id: Date.now()+'', code, name, score, streak, text, likes: 0, date: new Date().toLocaleDateString('tr-TR', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) });
+      await redis('LPUSH', 'wall:global', post);
+      await redis('LTRIM', 'wall:global', 0, 49);
+      await redis('EXPIRE', 'wall:global', 86400 * 30);
+      return res.status(200).json({ ok: true });
+    }
+
+    // Gönderi beğen
+    if (action === 'like') {
+      const raw = await redis('LRANGE', 'wall:global', 0, 49);
+      const posts = (raw || []).map(p => { try { return JSON.parse(p); } catch { return null; } }).filter(Boolean);
+      const idx = posts.findIndex(p => p.id === postId);
+      if (idx >= 0) {
+        posts[idx].likes = (posts[idx].likes || 0) + 1;
+        await redis('LSET', 'wall:global', idx, JSON.stringify(posts[idx]));
+      }
       return res.status(200).json({ ok: true });
     }
   }
 
-  // GET - profil, istek ve arkadaş listesi
   if (req.method === 'GET') {
-    const { codes, requests, friendlist } = req.query;
+    const { codes, requests, friendlist, wall } = req.query;
 
-    // Profil çek
     if (codes) {
       const codeList = codes.split(',').filter(Boolean).slice(0, 20);
       const profiles = await Promise.all(codeList.map(async code => {
@@ -73,7 +83,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ profiles: profiles.filter(Boolean) });
     }
 
-    // Bekleyen istekleri çek
     if (requests) {
       const raw = await redis('LRANGE', `requests:${requests}`, 0, 19);
       const reqs = (raw || []).map(r => { try { return JSON.parse(r); } catch { return null; } }).filter(Boolean);
@@ -81,7 +90,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ requests: reqs });
     }
 
-    // Arkadaş listesi çek
     if (friendlist) {
       const raw = await redis('GET', `friends:${friendlist}`);
       const codes = JSON.parse(raw || '[]');
@@ -91,6 +99,13 @@ export default async function handler(req, res) {
         try { return r ? JSON.parse(r) : null; } catch { return null; }
       }));
       return res.status(200).json({ profiles: profiles.filter(Boolean) });
+    }
+
+    // Paylaşım duvarı
+    if (wall) {
+      const raw = await redis('LRANGE', 'wall:global', 0, 29);
+      const posts = (raw || []).map(p => { try { return JSON.parse(p); } catch { return null; } }).filter(Boolean);
+      return res.status(200).json({ posts });
     }
   }
 
