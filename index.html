@@ -2373,7 +2373,21 @@ async function checkFriendRequests(){
     const res = await fetch('/api/friends?requests='+myCode);
     const data = await res.json();
     if(!data.requests||!data.requests.length) return;
-    data.requests.forEach(r => showFriendRequestUI(r));
+    data.requests.forEach(r => {
+      // Kabul bildirimi
+      if(r.fromName && r.fromName.endsWith('_accepted')){
+        const name = r.fromName.replace('_accepted','');
+        const friends = JSON.parse(localStorage.getItem('act_friends')||'[]');
+        if(!friends.find(f=>f.code===r.fromCode)){
+          friends.push({ code:r.fromCode, name, score:0, streak:0, done:0 });
+          localStorage.setItem('act_friends', JSON.stringify(friends));
+        }
+        showXPPopup(name+' isteğini kabul etti! 🎉');
+        renderLeaderboard();
+      } else {
+        showFriendRequestUI(r);
+      }
+    });
   } catch(e){}
 }
 
@@ -2396,12 +2410,13 @@ function showFriendRequestUI(req){
 
 async function acceptFriend(fromCode, fromName){
   const myCode = localStorage.getItem('act_my_code');
+  const myName = localStorage.getItem('act_username')||'?';
   try {
     await fetch('/api/friends', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'accept', myCode, friendCode:fromCode })
+      body: JSON.stringify({ action:'accept', myCode, myName, friendCode:fromCode, friendName:fromName })
     });
-    // Lokal listeye de ekle
+    // Lokal listeye ekle
     const friends = JSON.parse(localStorage.getItem('act_friends')||'[]');
     if(!friends.find(f=>f.code===fromCode)){
       friends.push({ code:fromCode, name:fromName, score:0, streak:0, done:0 });
@@ -2409,6 +2424,11 @@ async function acceptFriend(fromCode, fromName){
     }
     document.getElementById('friendReqBanner')?.remove();
     showXPPopup(fromName+' arkadaş olarak eklendi! 🎉');
+    // Karşı tarafa da bildirim gönder — artık arkadaş olduğunu bilsin
+    await fetch('/api/friends', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'request', toCode:fromCode, fromCode:myCode, fromName:myName+'_accepted' })
+    });
     renderLeaderboard();
   } catch(e){ showXPPopup('Hata!'); }
 }
